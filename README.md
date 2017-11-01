@@ -37,12 +37,14 @@ We need to perform the following operations:
      host - synapse
      ```
  * Match data columns to metadata columns in the following fashion:
+     
      |data|metadata|
      |---|---|
-     |specimenID|ChIP_Seq_ID| 
+     |specimenID|ChIP_Seq_ID|
      |individualID|Individual ID|
      |assayTarget|Histone Mark/Input|
      |cellType|NeuN|
+     
  * cellType should be `NeuN+` or `NeuN-` depending on whether its metadata is `Pos` or `Neg`.
  * Add a file format column, leaving off any compression extensions (like .gz).
 
@@ -138,6 +140,6 @@ cellType has null values.
 Proceed anyways? (y) or (n): y
 ```
 
-Because we explicitly added the above columns when we created the file view, the program assumes we meant to fill them with values. If any rows are missing values for these `activeColumns`, then the program will warn you before trying to push to Synapse (and have to reindex your view to make any more changes). We already know that some values will be missing because some files are missing metadata, so we continue anyways.
+Because we explicitly added the above columns when we created the file view, the program assumes we meant to fill them completely with values. If any rows are missing values for these `activeColumns`, then the program will warn you before trying to push to Synapse (and reindex your view to keep the indices consistent between your local machine and Synapse). We already know that some values will be missing because some files are missing metadata, so we proceed with the push anyways.
 
-And we're done. 
+And we're done.
