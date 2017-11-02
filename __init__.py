@@ -1,3 +1,3 @@
 __all__ = ['Pipeline', 'utils']
-from annotations.Pipeline import Pipeline
-from annotations import utils
+from annotator.Pipeline import Pipeline
+from annotator import utils

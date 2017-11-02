@@ -31,7 +31,7 @@ def _synread(synId, f, syn_, sortCols):
     """ See `synread` """
     if isinstance(f, sc.entity.File):
         d = pd.read_csv(f.path, header="infer", sep=None, engine="python")
-    elif isinstance(f, sc.table.EntityViewSchema):
+    elif isinstance(f, (sc.table.EntityViewSchema, sc.table.Schema)):
         q = syn_.tableQuery("select * from %s" % synId)
         d = q.asDataFrame();
     if sortCols:
@@ -164,6 +164,47 @@ def combineSynapseTabulars(syn, tabulars):
     """
     tabulars = synread(syn, tabulars)
     return pd.concat(tabulars, axis=1, ignore_index=True).sort_index(1)
+
+def inferValues(df, col, referenceCols):
+    """ Fill in values for indices which match on `referenceCols`
+    and which have a single, unique, non-NaN value in `col`.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+    col : str
+        Column to fill with values.
+    referenceCols : list or str
+        Column(s) to match on.
+    """
+    df = df.copy()
+    groups = df.groupby(referenceCols)
+    values = groups[col].unique()
+    for k, v in values.items():
+        v = v[pd.notnull(v)] # filter out na values
+        if len(v) == 1:
+            df.loc[df[referenceCols] == k, col] = v[0]
+        else:
+            print("Unable to infer value when {} = {}".format(
+                referenceCols, k))
+    return df
+
+def substituteColumnValues(referenceList, mod):
+    """ Substitute values in a column according to a mapping.
+
+    Parameters
+    ----------
+    referenceList : list
+        The values to substitute.
+    mod : dict
+        Mappings from the old to new values.
+    """
+    if isinstance(mod, dict):
+        referenceList = [mod[v] if v in mod else v for v in referenceList]
+    else:
+        raise TypeError("{} is not a supported referenceList type".format(
+            type(referenceList)))
+    return referenceList
 
 def makeColFromRegex(referenceList, regex):
     """ Return a list created by mapping a regular expression to another list.

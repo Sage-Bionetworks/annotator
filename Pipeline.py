@@ -80,12 +80,40 @@ class Pipeline:
         else:
             print("No data view set.")
 
+    def tail(self):
+        """ Print tail of `self.view` """
+        if hasattr(self.view, 'tail'):
+            print(self.view.tail())
+        else:
+            print("No data view set")
+
     def shape(self):
         """ Print shape of `self.view` """
-        if hasattr(self.view, 'head'):
+        if hasattr(self.view, 'shape'):
             print(self.view.shape)
         else:
             print("No data view set.")
+
+    def metaHead(self):
+        """ Print head of `self._meta` """
+        if hasattr(self._meta, 'head'):
+            print(self._meta.head())
+        else:
+            print("No metadata view set.")
+
+    def metaTail(self):
+        """ Print tail of `self._meta` """
+        if hasattr(self._meta, 'tail'):
+            print(self._meta.tail())
+        else:
+            print("No metadata view set.")
+
+    def metaShape(self):
+        """ Print shape of `self._meta` """
+        if hasattr(self._meta, 'shape'):
+            print(self._meta.shape())
+        else:
+            print("No metadata view set.")
 
     def columns(self, style="numbers"):
         """ Pretty print `self.view.columns`.
@@ -157,19 +185,19 @@ class Pipeline:
             self.backup("addActiveCols")
         # activeCols can be a str, list, dict, or DataFrame
         if isinstance(activeCols, str) and not path:
-            if meta:
+            if isMeta:
                 self._metaActiveCols.append(activeCols)
             else:
                 self._activeCols.append(activeCols)
         elif isinstance(activeCols, (list, dict)) and not path:
-            if meta:
+            if isMeta:
                 for c in activeCols: self._metaActiveCols.append(c)
             else:
                 for c in activeCols: self._activeCols.append(c)
         elif isinstance(activeCols, pd.DataFrame):
             # assumes column names are in first column
             for c in activeCols[activeCols.columns[0]]:
-                if meta:
+                if isMeta:
                     self._metaActiveCols.append(c)
                 else:
                     self._activeCols.append(c)
@@ -187,6 +215,9 @@ class Pipeline:
             Optional. Whether to save the state of `self` before updating
             column values. Defaults to True.
         """
+        if self.view is None:
+            print("No data view set.")
+            return
         if backup: self.backup("addDefaultValues")
         for k in colVals:
             self.view[k] = colVals[k]
@@ -201,6 +232,9 @@ class Pipeline:
         requirements is found, the key column is automatically added to `self.view`
         with the same name as the column matched upon in `self._meta`.
         """
+        if self.view is None or self._meta is None:
+            print("No data view set.")
+            return
         self.backup("addKeyCol")
         link = self._linkCols(1)
         dataKey, metaKey = link.popitem()
@@ -269,90 +303,76 @@ class Pipeline:
         filetypeCol = utils.makeColFromRegex(self.view[referenceCol].values, regex)
         self.view[fileFormatColName] = filetypeCol
 
-    def addLinks(self, links, backup=True):
+    def addLinks(self, links=None, append=True, backup=True):
         """ Add link values to `self.links`
 
         Parameters
         ----------
-        links : dict
-            Link values to add
+        links : dict, optional
+            Mappings from data columns to metadata columns to add
+            to `self.links`. Calls `self._linkCols` if not set.
 
         Returns
         -------
-        Links added to `self.links`
+        Links stored in `self.links`.
         """
+        if self.view is None or self._meta is None:
+            print("No data view set.")
+            return
         if backup:
             self.backup("addLinks")
+        if links is None:
+            links = self._linkCols(-1)
         if not isinstance(links, dict):
             raise TypeError("`links` must be a dictionary-like object")
-        if not self.links:
+        if not self.links or not append:
             self.links = links
         else:
-            for l in links:
-                self.links[l] = links[l]
-        return links
+            for k in links:
+                self.links[k] = links[k]
+        for k, v in links.items():
+            if not k in self._activeCols:
+                self._activeCols.append(l)
+            if not v in self._metaActiveCols:
+                self._metaActiveCols.append(v)
+        return self.links
 
     def isValidKeyPair(self, dataCol=None, metaCol=None):
-        """ Check if two columns are both subsets of each other (i.e., have
-            the same values).
+        """ Check if two columns are compatible to join upon.
 
         Parameters
         ----------
-        dataCol : str
+        dataCol : str, optional
             Column in `self.view`.
-        metaCol : str
+        metaCol : str, optional
             Column in `self._meta`.
 
         Returns
         -------
-        Boolean
+        Boolean, True if all dataCols are present in metaCol, False otherwise.
         """
         if dataCol is None and metaCol is None:
             dataCol, metaCol = self._linkCols(1).popitem()
-        if set(self.view[dataCol]).difference(self._meta[metaCol]):
+        missingVals = set(self.view[dataCol]).difference(self._meta[metaCol])
+        if missingVals:
             print("The following values are missing:", end="\n")
-            for i in set(self.view[dataCol]).difference(self._meta[metaCol]):
-                print(i)
+            for v in missingVals:
+                print(v)
             return False
         return True
 
-    def linkMetadata(self, links=None):
-        """ Link data columns to metadata columns.
-
-        Parameters
-        ----------
-        links : dict
-            Optional. Mappings from data columns to metadata columns to add
-            to `self.links`. Defaults to `self._linkCols`.
-
-        Returns
-        -------
-        A dictionary of newly created links.
-        """
-        self.backup("linkMetadata")
-        if links is None:
-            links = self._linkCols(-1)
-        for v in links.values():
-            if not v in self._metaActiveCols:
-                self._metaActiveCols.append(v)
-        self.addLinks(links, False)
-        return links
-
-    def modifyColumn(self, col, mod):
-        """ Change values in a column according to a mapping.
+    def substituteColumnValues(self, col, mod):
+        """ Substitute values in a column according to a mapping.
 
         Parameters
         ----------
         col : str
-            The column to modify.
+            The column to substitute values in.
         mod : dict
             Mappings from the old to new values.
         """
-        self.backup("modifyColum")
-        oldCol = self.view[col].values
-        if isinstance(mod, dict):
-            newCol = [mod[v] if v in mod else v for v in oldCol]
-        self.view[col] = newCol
+        self.backup("substituteColumnValues")
+        self.view.loc[:,col] = utils.substituteColumnValues(self.view[col].values)
 
     def _parseView(self, view, sortCols, isMeta=False):
         """ Turn `view` into a pandas DataFrame.
@@ -574,6 +594,60 @@ class Pipeline:
         if isinstance(addCols, dict): self.addDefaultValues(addCols, False)
         return self._schema.id
 
+    def transferLinks(self, cols=None, on=None, how='left', dropOn=True):
+        """ Copy metadata to `self.view`, matching on `self.keyCol`.
+
+        Parameters
+        ----------
+        cols : list-like
+            Optional. A subset of columns which have been linked
+            with `self.addLinks` to transfer metadata values to.
+            Defaults to all linked columns.
+        on : str, optional
+            Column to match data with metadata.
+            Defaults to `self.keyCol`.
+        how : str, optional
+            How to merge the metadata on the data.
+            Defaults to 'left' (keep only the keys in the data).
+        dropOn : bool, optional
+            Drops the column, `on`, used to align the data
+            with the metadata. Defaults to True.
+
+        After adding a key column (`self.addKeyCol`) and linking the data
+        columns to the metadata columns (`self.addLinks`), transfer the
+        values from the metadata to the data, aligning on `on`.
+        """
+        if on is None: on = self.keyCol
+        if not self.links: raise RuntimeError("Need to link metadata values first.")
+        self.backup("transferLinks")
+        if not cols:
+            cols = list(self.links.keys())
+            if on in cols:
+                cols.pop(cols.index(on))
+        metaCols = list(set(self.links.values()))
+        renamedCols = {}
+        for c in metaCols:
+            if c in self.view.columns:
+                renamedCols[c] = "{}_meta".format(c)
+        metaCols.append(on)
+        relevant_meta = self._meta.loc[:,metaCols]
+        relevant_meta.rename(columns=renamedCols, inplace=True)
+        # prevent type comparison errors
+        relevant_meta[on] = relevant_meta[on].astype(str)
+        self.view[on] = self.view[on].astype(str)
+        merged = self.view.merge(relevant_meta, on=on, how=how)
+        # if there are duplicates in the data this may break things
+        merged.drop_duplicates(inplace=True)
+        print("original", self.view.shape)
+        print("merged", merged.shape)
+        for c in cols:
+            v = self.links[c]
+            if v in renamedCols:
+                v = renamedCols[c]
+            self.view[c] = merged[v].values
+        if dropOn:
+            self.view.drop(on, 1, inplace=True)
+
     def inferValues(self, col, referenceCols):
         """ Fill in values for indices which match on `referenceCols`
         and which have a single, unique, non-NaN value in `col`.
@@ -585,56 +659,11 @@ class Pipeline:
         referenceCols : list or str
             Column(s) to match on.
         """
+        if self.view is None:
+            print("No data view set.")
+            return
         self.backup("inferValues")
-        groups = self.view.groupby(referenceCols)
-        values = groups[col].unique()
-        for k, v in values.items():
-            v = v[pd.notnull(v)] # filter out na values
-            if len(v) == 1:
-                self.view.loc[self.view[referenceCols] == k, col] = v[0]
-            else:
-                print("Unable to infer value when {} = {}".format(
-                    referenceCols, k))
-
-    def transferMetadata(self, cols=None, on=None, how='left', dropOn=True):
-        """ Copy metadata to `self.view`, matching on `self.keyCol`.
-
-        Parameters
-        ----------
-        cols : list-like
-            Optional. A subset of columns which have been linked
-            with `self.linkMetadata` to transfer metadata values to.
-            Defaults to all linked columns.
-        on : str
-            Optional. Column to match data with metadata.
-            Defaults to `self.keyCol`.
-        how : str
-            Optional. How to merge the metadata on the data.
-            Defaults to 'left' (keep only the keys in the data).
-        dropOn : bool
-            Optional. Drops the column, `on`, used to align the data
-            with the metadata. Defaults to True.
-
-        After adding a key column (`self.addKeyCol`) and linking the data
-        columns to the metadata columns (`self.linkMetadata`), transfer the
-        values from the metadata to the data, aligning on `on`.
-        """
-        if on is None: on = self.keyCol
-        if not self.links: raise RuntimeError("Need to link metadata values first.")
-        self.backup("transferMetadata")
-        if not cols:
-            cols = list(self.links.keys())
-            if on in cols:
-                cols.pop(cols.index(on))
-        relevant_meta = self._meta[list(set(self.links.values()))]
-        merged = self.view.merge(relevant_meta, on=on, how=how)
-        merged = merged.drop_duplicates()
-        print("original", self.view.shape)
-        print("merged", merged.shape)
-        for c in cols:
-            self.view[c] = merged[self.links[c]].values
-        if dropOn:
-            self.view.drop(on, 1, inplace=True)
+        self.view = utils.inferValues(self.view, col, referenceCols)
 
     def _linkCols(self, iters):
         """ Helper function to return a dictionary with data columns as keys
