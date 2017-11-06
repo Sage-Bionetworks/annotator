@@ -10,10 +10,10 @@ We have files in syn1234567 with the following properties:
 
 |name|parentId|...|
 |---|---|---|
-|MSSM_PFC_1138_Pos_IN_1_TAGCTT_BC90D9ANXX_L002_001.R1.fastq.gz|syn9977073|...|
-|PENN_PFC_A10_039_Pos_IN_GGCTAC_AC7JFFANXX_L008_001.R2.fastq.gz|syn9977073|...|
-|PITT_PFC_BP_1196_Pos_IN_MERGED.R1.fastq.gz|syn9977073|...|
-|randomPythonFile.pyc|syn9977073|...|
+|MSSM_PFC_1138_Pos_IN_1_TAGCTT_BC90D9ANXX_L002_001.R1.fastq.gz|syn1234567|...|
+|PENN_PFC_A10_039_Pos_IN_GGCTAC_AC7JFFANXX_L008_001.R2.fastq.gz|syn1234567|...|
+|PITT_PFC_BP_1196_Pos_IN_MERGED.R1.fastq.gz|syn1234567|...|
+|randomPythonFile.pyc|syn1234567|...|
 |...|...|...|
 
 
@@ -108,7 +108,8 @@ In some cases, files are missing metadata or whoever uploaded the data included 
 
 If we accept (`y`), then a new column with the same name as the key column in the metadata (`ChIP_Seq_ID`) will be added to our data view, containing the results of mapping the regular expression to the key column in the data (`name`). If our regular expression was able to find every value it parsed in the metadata, then there would be no output from the program -- we would simply jump right back into the console with our newly created column.
 
-Now that we have a column in both the data and the metadata to align upon, we can link each column requiring annotations in the data with its respective column in the metadata.
+Now that we have a column in both the data and the metadata to align upon, we can link each column requiring annotations in the data with its respective column in the metadata. Input a newline once you are finished.
+
 ```python
 In [10]: p.addLinks() # Same process as p.addKeyCol, but no regular expressions this time :-)
 In [11]: p.transferLinks()
