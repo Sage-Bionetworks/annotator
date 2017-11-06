@@ -110,8 +110,8 @@ If we accept (`y`), then a new column with the same name as the key column in th
 
 Now that we have a column in both the data and the metadata to align upon, we can link each column requiring annotations in the data with its respective column in the metadata.
 ```python
-In [10]: p.linkMetadata() # Same process as p.addKeyCol, but no regular expressions this time :-)
-In [11]: p.transferMetadata()
+In [10]: p.addLinks() # Same process as p.addKeyCol, but no regular expressions this time :-)
+In [11]: p.transferLinks()
 original: (323, 10) # we already have a ChIP_Seq_ID column here
 merged: (323, 13)
 ```
