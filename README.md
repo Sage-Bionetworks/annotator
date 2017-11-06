@@ -10,10 +10,10 @@ We have files in syn1234567 with the following properties:
 
 |name|parentId|...|
 |---|---|---|
-|MSSM_PFC_1138_Pos_IN_1_TAGCTT_BC90D9ANXX_L002_001.R1.fastq.gz|syn9977073|...|
-|PENN_PFC_A10_039_Pos_IN_GGCTAC_AC7JFFANXX_L008_001.R2.fastq.gz|syn9977073|...|
-|PITT_PFC_BP_1196_Pos_IN_MERGED.R1.fastq.gz|syn9977073|...|
-|randomPythonFile.pyc|syn9977073|...|
+|MSSM_PFC_1138_Pos_IN_1_TAGCTT_BC90D9ANXX_L002_001.R1.fastq.gz|syn1234567|...|
+|PENN_PFC_A10_039_Pos_IN_GGCTAC_AC7JFFANXX_L008_001.R2.fastq.gz|syn1234567|...|
+|PITT_PFC_BP_1196_Pos_IN_MERGED.R1.fastq.gz|syn1234567|...|
+|randomPythonFile.pyc|syn1234567|...|
 |...|...|...|
 
 
