@@ -124,7 +124,7 @@ Remember, we still have to add a file format column and transform the values in 
 
 ```python
 In [12]: p.addFileFormatCol()
-In [13]: p.modifyColumn('cellType', {'Pos':'NeuN+', 'Neg':'NeuN-'})
+In [13]: p.substituteColumnValues('cellType', {'Pos':'NeuN+', 'Neg':'NeuN-'})
 ```
 The `addFileFormatCol` method defaults to a preprogrammed regex and uses column 'name' in the data view. But we can use a more flexible approach by using `annotator.utils.makeColFromRegex` if necessary.
 
