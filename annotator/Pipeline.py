@@ -332,7 +332,7 @@ class Pipeline:
                 self.links[k] = links[k]
         for k, v in links.items():
             if not k in self._activeCols:
-                self._activeCols.append(l)
+                self._activeCols.append(k)
             if not v in self._metaActiveCols:
                 self._metaActiveCols.append(v)
         return self.links
