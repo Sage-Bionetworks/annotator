@@ -395,7 +395,7 @@ class Pipeline:
         if isinstance(view, str):
             return utils.synread(self.syn, view, sortCols)
         elif isinstance(view, list) and meta:
-            return utils.combineSynapseTabulars(self.syn, view)
+            return utils.combineSynapseTabulars(self.syn, view, axis=1)
         elif isinstance(view, pd.DataFrame):
             if sortCols:
                 view = view.sort_index(1)
