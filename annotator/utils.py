@@ -39,7 +39,7 @@ def _synread(synId, f, syn_, sortCols):
     else:
         return d
 
-def convertClipboardToDict(sep):
+def clipboardToDict(sep):
     """ Parse two-column delimited clipboard contents to a dictionary.
 
     Parameters
@@ -149,8 +149,8 @@ def makeColumns(obj, asSynapseCols=True):
     elif isinstance(obj, dict): return _colsFromDict(obj, asSynapseCols)
     elif isinstance(obj, list): return _colsFromList(obj, asSynapseCols)
 
-def combineSynapseTabulars(syn, tabulars):
-    """ Concatenate tabular files column-wise.
+def combineSynapseTabulars(syn, tabulars, axis=0):
+    """ Concatenate tabular files.
 
     Parameters
     ----------
@@ -163,7 +163,7 @@ def combineSynapseTabulars(syn, tabulars):
     pandas.DataFrame
     """
     tabulars = synread(syn, tabulars)
-    return pd.concat(tabulars, axis=1, ignore_index=True).sort_index(1)
+    return pd.concat(tabulars, axis=axis, ignore_index=True).sort_index(1)
 
 def inferValues(df, col, referenceCols):
     """ Fill in values for indices which match on `referenceCols`
@@ -206,7 +206,7 @@ def substituteColumnValues(referenceList, mod):
             type(referenceList)))
     return referenceList
 
-def makeColFromRegex(referenceList, regex):
+def colFromRegex(referenceList, regex):
     """ Return a list created by mapping a regular expression to another list.
     The regular expression must contain at least one capture group.
 

@@ -58,7 +58,7 @@ Welcome, AnnotatorAdmin!
 In [4]: p = annotator.Pipeline(syn, meta="syn7654321")
  [####################]100.00%   1/1   Done...
 In [5]: # Copy the default annotations (assay, study, etc.) as they appear above to your clipboard
-In [6]: cols = annotator.utils.convertClipboardToDict(" - ")
+In [6]: cols = annotator.utils.clipboardToDict(" - ")
 In [7]: for c in ['specimenID', 'individualID', 'assayTarget', 'cellType']:
             cols[c] = None
 In [8]: p.createFileView(name="EpiDiff_CHiPSeq", parent="syn0000000", scope="syn1234567", addCols=cols)
@@ -126,7 +126,7 @@ Remember, we still have to add a file format column and transform the values in 
 In [12]: p.addFileFormatCol()
 In [13]: p.substituteColumnValues('cellType', {'Pos':'NeuN+', 'Neg':'NeuN-'})
 ```
-The `addFileFormatCol` method defaults to a preprogrammed regex and uses column 'name' in the data view. But we can use a more flexible approach by using `annotator.utils.makeColFromRegex` if necessary.
+The `addFileFormatCol` method defaults to a preprogrammed regex and uses column 'name' in the data view. But we can use a more flexible approach by using `annotator.utils.colFromRegex` if necessary.
 
 If everything looks good, we can go ahead and push our changes back up to Synapse.
 
