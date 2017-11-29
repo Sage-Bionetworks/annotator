@@ -22,6 +22,8 @@ def synread(syn_, synId, sortCols=True):
     if isinstance(synId, str):
         f = syn_.get(synId)
         d = _synread(synId, f, syn_, sortCols)
+        if hasattr(d, 'head'): print(d.head())
+        if hasattr(d, 'shape'): print("Full size:", d.shape)
     else: # is list-like
         files = list(map(syn_.get, synId))
         d = [_synread(synId_, f, syn_, sortCols) for synId_, f in zip(synId, files)]
@@ -30,7 +32,10 @@ def synread(syn_, synId, sortCols=True):
 def _synread(synId, f, syn_, sortCols):
     """ See `synread` """
     if isinstance(f, sc.entity.File):
-        d = pd.read_csv(f.path, header="infer", sep=None, engine="python")
+        if f.path is None:
+            d = None
+        else:
+            d = pd.read_csv(f.path, header="infer", sep=None, engine="python")
     elif isinstance(f, (sc.table.EntityViewSchema, sc.table.Schema)):
         q = syn_.tableQuery("select * from %s" % synId)
         d = q.asDataFrame();
