@@ -170,6 +170,27 @@ def combineSynapseTabulars(syn, tabulars, axis=0):
     tabulars = synread(syn, tabulars)
     return pd.concat(tabulars, axis=axis, ignore_index=True).sort_index(1)
 
+def compareDicts(dict1, dict2):
+    """ Compare two dictionaries, returning sets containing keys from
+    dict1 difference dict2, dict2 difference dict1, and shared keys with
+    non-equivalent values, respectively.
+
+    Parameters
+    ----------
+    dict1 : dict
+    dict2 : dict
+
+    Returns
+    -------
+    set, set, set
+    """
+    d1_keys = set(dict1.keys())
+    d2_keys = set(dict2.keys())
+    new = d1_keys - d2_keys
+    missing = d2_keys - d1_keys
+    modified = {k for k in d1_keys & d2_keys if dict1[k] != dict2[k]}
+    return new, missing, modified
+
 def inferValues(df, col, referenceCols):
     """ Fill in values for indices which match on `referenceCols`
     and which have a single, unique, non-NaN value in `col`.
@@ -181,6 +202,10 @@ def inferValues(df, col, referenceCols):
         Column to fill with values.
     referenceCols : list or str
         Column(s) to match on.
+
+    Returns
+    -------
+    pd.DataFrame
     """
     df = df.copy()
     groups = df.groupby(referenceCols)
@@ -231,7 +256,7 @@ def colFromRegex(referenceList, regex):
         raise RuntimeError("`regex` must have at least one capture group.")
     newCol = []
     for s in referenceList:
-        m = p.search(s)
-        if not m: print("{} does not match regex.".format(s))
+        m = p.search(s) if isinstance(s, str) else None
+        if not m and isinstance(s, str): print("{} does not match regex.".format(s))
         newCol.append(m.group(1)) if m else newCol.append(None)
     return newCol
