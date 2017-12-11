@@ -1,5 +1,38 @@
 from __future__ import unicode_literals
+import os
+import requests
+import json
 import pandas as pd
+
+
+def moduleJsonPath(releaseVersion=None):
+    """ get and load the list of json files from data folder (given the api endpoint url - ref master - latest vesion)
+     then construct a dictionary of module names and its associated raw data github url endpoints.
+
+    Parameters
+    ----------
+    releaseVersion : str
+    Optional. github release version of annotations
+
+    Returns
+    -------
+    Python dictionary of module name keys and the release version path to its module raw github json URL as values
+
+    example {u'analysis':
+             u'https://raw.githubusercontent.com/Sage-Bionetworks/synapseAnnotations/master/synapseAnnotations/data/analysis.json',
+            ... } @kenny++
+    """
+    if releaseVersion is None:
+        # get the latest release version
+        reqRelease = requests.get("https://api.github.com/repos/Sage-Bionetworks/synapseAnnotations/releases")
+        releaseVersion = reqRelease.json()[0]['tag_name']
+
+    gitPath = 'https://api.github.com/repos/Sage-Bionetworks/synapseAnnotations/contents/synapseAnnotations/data/?ref='
+    req = requests.get(gitPath + releaseVersion)
+    file_list = json.loads(req.content)
+    names = {os.path.splitext(x['name'])[0]: x['download_url'] for x in file_list}
+
+    return names
 
 
 def flattenJson(path, module=None):
