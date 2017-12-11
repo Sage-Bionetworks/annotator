@@ -6,18 +6,13 @@ import pandas
 import synapseclient
 from nose.tools import assert_equals
 from pandas.util.testing import assert_frame_equal
+from annotator import schema
 
 syn = synapseclient.login()
 
 tableSynId = "syn10242922"
 
-# get and load the list of json files from data folder (given the api endpoint url - ref master - latest vesion)
-# then construct a dictionary of module names and its associated raw data github url endpoints.
-req = requests.get(
-    'https://api.github.com/repos/Sage-Bionetworks/synapseAnnotations/contents/synapseAnnotations/data/?ref=master')
-file_list = json.loads(req.content)
-names = {os.path.splitext(x['name'])[0]: x['download_url'] for x in file_list}
-
+names = schema.moduleJsonPath()
 currentTable = syn.tableQuery("SELECT * FROM %s" % tableSynId)
 currentTable = currentTable.asDataFrame()
 
