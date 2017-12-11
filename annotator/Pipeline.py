@@ -538,7 +538,7 @@ class Pipeline:
                 padding = " " if (len(cols) > 10 and i < 10) else ""
                 print(str(i), "{}|".format(padding), cols[i])
 
-    def createFileView(self, name, parent, scope, addCols=None):
+    def createFileView(self, name, parent, scope, addCols=None, schema=None):
         """ Create and store a file view for further manipulation.
 
         Parameters
@@ -551,6 +551,9 @@ class Pipeline:
             Synapse IDs of items to include in file view.
         addCols : dict, list, or str
             Columns to add in addition to the default file view columns.
+        schema : str
+            A path to a .json file specifying a schema the file view should
+            conform to.
 
         If `addCols` is a dict:
             Add keys as columns. If a key's value is `None`, then insert an empty
