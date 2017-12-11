@@ -89,3 +89,22 @@ def flattenJson(path, module=None):
     module_df = pd.concat(flatten_vals)
     module_df = module_df.rename(columns={'name': 'key'})
     return module_df
+
+
+def validateView(view, schema):
+    """ Check that a view conforms with a schema.
+
+    Parameters
+    ----------
+    view : pandas DataFrame, str
+        A DataFrame or Synapse ID -- anything that can be read by
+        utils.synread.
+    schema : pandas DataFrame, str
+        A DataFrame in flattened schema format (see flattenJson) or
+        path to .json file.
+
+    Returns
+    -------
+    bool
+    """
+    pass
