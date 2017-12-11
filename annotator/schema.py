@@ -18,7 +18,8 @@ def flattenJson(path, module=None):
     """
     json_record = pd.read_json(path)
 
-    # grab annotations with empty enumValue lists i.e. don't require normalization and structure their schema
+    # grab annotations with empty enumValue lists
+    # i.e. don't require normalization and structure their schema
     empty_vals = json_record.loc[json_record.enumValues.str.len() == 0]
     empty_vals = empty_vals.drop('enumValues', axis=1)
     empty_vals['valueDescription'] = ""
@@ -35,10 +36,13 @@ def flattenJson(path, module=None):
     for i, jsn in enumerate(json_record['enumValues']):
         normalized_values_df = pd.io.json.json_normalize(jsn)
 
-        # re-name 'description' defined in dictionary to valueDescription to match table on synapse schema
-        normalized_values_df = normalized_values_df.rename(columns={'description': 'valueDescription'})
+        # re-name 'description' defined in dictionary to valueDescription
+        # to match table on synapse schema
+        normalized_values_df = normalized_values_df.rename(
+                columns={'description': 'valueDescription'})
 
-        # grab key information in its row, expand it by values dimension and append its key-columns to flattened values
+        # grab key information in its row, expand it by values dimension
+        # and append its key-columns to flattened values
         rows = json_record.loc[[i], json_record.columns != 'enumValues']
         repeats = pd.concat([rows] * len(normalized_values_df.index))
         repeats.set_index(normalized_values_df.index, inplace=True)
