@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
 import pandas as pd
 
+
 def flattenJson(path, module=None):
-    """“Normalize” semi-structured JSON schema data into a flat table.
+    """Normalize semi-structured JSON schema data into a flat table.
 
     Parameters
     ----------
