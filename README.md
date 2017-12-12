@@ -9,6 +9,10 @@ Installation
 
 The annotator has been built and tested on Python 2.7 and 3.6 on Mac OS X.
 
+### Install using pip
+
+    (sudo) pip install git+https://github.com/Sage-Bionetworks/annotator.git
+
 ### Install from source
 
 Clone the [source code repository](https://github.com/Sage-Bionetworks/annotator.git).
