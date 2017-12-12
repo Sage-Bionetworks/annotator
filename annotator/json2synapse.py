@@ -66,24 +66,14 @@ def main():
     if args.releaseVersion is not None:
         releaseVersion = args.releaseVersion
     else:
-        # get the latest release version
-        reqRelease = requests.get("https://api.github.com/repos/Sage-Bionetworks/synapseAnnotations/releases")
-        releaseVersion = reqRelease.json()[0]['tag_name']
+        releaseVersion = None
 
     all_modules = []
     key = ["key", "value", "module"]
     annotation_schema = ["key", "description", "columnType", "maximumSize", "value", "valueDescription",
                          "source", "module"]
 
-    # get and load the list of json files from data folder (given the api endpoint url - ref master - latest vesion)
-    # then construct a dictionary of module names and its associated raw data github url endpoints.
-    # example {u'analysis':
-    #          u'https://raw.githubusercontent.com/Sage-Bionetworks/synapseAnnotations/master/synapseAnnotations/data/analysis.json',
-    #          ... } @kenny++
-    req = requests.get(
-        'https://api.github.com/repos/Sage-Bionetworks/synapseAnnotations/contents/synapseAnnotations/data/?ref=%s' %releaseVersion)
-    file_list = json.loads(req.content)
-    names = {os.path.splitext(x['name'])[0]: x['download_url'] for x in file_list}
+    names = schema.moduleJsonPath(releaseVersion)
 
     for module, path in names.iteritems():
         module_df = schema.flattenJson(path, module)
