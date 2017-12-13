@@ -4,13 +4,13 @@ import synapseclient as sc
 import re
 
 
-def synread(syn_, synId, sortCols=True):
+def synread(syn_, obj, sortCols=True):
     """ A simple way to read in Synapse entities to pandas.DataFrame objects.
 
     Parameters
     ----------
     syn_ : synapseclient.Synapse
-    synId : str or list
+    obj : pd.DataFrame, str, or list
         Synapse entity to read or a list of Synapse entities to concatenate
         column-wise.
     sortCols : bool
@@ -21,17 +21,20 @@ def synread(syn_, synId, sortCols=True):
     A pandas.DataFrame object.
     """
     # if "syn" in globals(): syn_ = syn
-    if isinstance(synId, str):
-        f = syn_.get(synId)
-        d = _synread(synId, f, syn_, sortCols)
+    if isinstance(obj, pd.DataFrame):
+        obj = obj.sort_index(1) if sortCols else obj
+        return obj
+    elif isinstance(obj, str):
+        f = syn_.get(obj)
+        d = _synread(obj, f, syn_, sortCols)
         if hasattr(d, 'head'):
             print(d.head())
         if hasattr(d, 'shape'):
             print("Full size:", d.shape)
     else:  # is list-like
-        files = list(map(syn_.get, synId))
+        files = list(map(syn_.get, obj))
         d = [_synread(synId_, f, syn_, sortCols)
-             for synId_, f in zip(synId, files)]
+             for synId_, f in zip(obj, files)]
     return d
 
 
