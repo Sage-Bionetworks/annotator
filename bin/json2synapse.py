@@ -1,10 +1,7 @@
-import os
-import requests
-import json
 import argparse
 import pandas
 import synapseclient
-import schema
+from annotator import schema
 
 
 syn = synapseclient.login()
@@ -23,12 +20,12 @@ def updateTable(tableSynId, newTable, releaseVersion):
         deletedRows = syn.delete(currentTable.asRowSet())
 
     # get table schema and set it's release version annotation
-    schema = syn.get(tableSynId)
-    schema.annotations = {"annotationReleaseVersion": str(releaseVersion)}
-    updated_schema_release = syn.store(schema)
+    tableSchema = syn.get(tableSynId)
+    tableSchema.annotations = {"annotationReleaseVersion": str(releaseVersion)}
+    updated_schema_release = syn.store(tableSchema)
 
     # store the new table on synapse
-    table = syn.store(synapseclient.Table(schema, newTable))
+    table = syn.store(synapseclient.Table(tableSchema, newTable))
 
 
 def main():
@@ -45,6 +42,8 @@ def main():
     This code was built under
     Python 2.7.13 :: Anaconda 4.4.0 (x86_64)
     pandas 0.19.2
+
+    Note: Only for Sage Bioneworks internal use
 
     Example run:
         python scripts/json2synapse.py --tableId  syn1234 --releaseVersion 'v2.1.1'
@@ -83,23 +82,8 @@ def main():
     all_modules_df = pandas.concat(all_modules)
 
     # re-arrange columns/fields and sort data.
-    # this step is important for testing (compare_key_values()) where we diff two data frames
     all_modules_df = all_modules_df[annotation_schema]
     all_modules_df.sort_values(key, ascending=[True, True, True], inplace=True)
-
-    # To resolve an error from global searching inside annotationUI R shiny app data tables (https://datatables.net/)
-    # I had to convert data encoding here. Currently this issue seems to be resolved, but leaving code in
-    # in case of failure. It could also help for testing or creating a table via csv upload
-    # to print out the modules data.
-    # all_modules_df.to_csv("annot.csv", sep=',', index=False, encoding="utf-8")
-    # all_modules_df = pandas.read_csv('annot.csv', delimiter=',', encoding="utf-8")
-    # os.remove("annot.csv")
-
-    # Ensure python 2.7 skips or converts special chars such as \u2019 to utf-8.
-    # Seems like pandas library does not resolve this issue:
-    # UnicodeEncodeError: 'ascii' codec can't encode character u'\u2019' in position x: ordinal not in range(y)
-    # Also see: https://docs.python.org/2/howto/unicode.html
-    # all_modules_df.valueDescription = all_modules_df.valueDescription.str.encode('ascii', 'ignore')
     all_modules_df.valueDescription = all_modules_df.valueDescription.str.encode('utf-8')
 
     updateTable(tableSynId=tableSynId, newTable=all_modules_df, releaseVersion=releaseVersion)
