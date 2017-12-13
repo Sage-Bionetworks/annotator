@@ -4,6 +4,7 @@ import synapseclient as sc
 import readline
 import json
 from . import utils
+from . import schema as schemaModule
 from copy import deepcopy
 
 
@@ -13,7 +14,7 @@ class Pipeline:
     BACKUP_LENGTH = 50
 
     def __init__(self, syn, view=None, meta=None, activeCols=[],
-                 metaActiveCols=[], links=None, sortCols=True):
+                 metaActiveCols=[], links=None, sortCols=True, schema=None):
         """ Create a new Pipeline object.
 
         Parameters
@@ -43,7 +44,9 @@ class Pipeline:
         """
         self.syn = syn
         self.view = view if view is None else self._parseView(view, sortCols)
-        self._schema = self.syn.get(view) if isinstance(view, str) else None
+        self._entityViewSchema = self.syn.get(view) if isinstance(view, str) else None
+        self.schema = (schemaModule.flattenJson(schema)
+                        if isinstance(schema, str) else schema)
         self._index = self.view.index if isinstance(
                 self.view, pd.DataFrame) else None
         self._activeCols = []
@@ -190,23 +193,25 @@ class Pipeline:
             self.backup("addActiveCols")
         # activeCols can be a str, list, dict, or DataFrame
         if isinstance(activeCols, str) and not path:
-            if isMeta:
+            if isMeta and activeCols not in self._metaActiveCols:
                 self._metaActiveCols.append(activeCols)
-            else:
+            elif activeCols not in self._activeCols:
                 self._activeCols.append(activeCols)
         elif isinstance(activeCols, (list, dict)) and not path:
             if isMeta:
                 for c in activeCols:
-                    self._metaActiveCols.append(c)
+                    if c not in self._metaActiveCols:
+                        self._metaActiveCols.append(c)
             else:
                 for c in activeCols:
-                    self._activeCols.append(c)
+                    if c not in self._activeCols:
+                        self._activeCols.append(c)
         elif isinstance(activeCols, pd.DataFrame):
             # assumes column names are in first column
             for c in activeCols[activeCols.columns[0]]:
-                if isMeta:
+                if isMeta and c not in self._metaActiveCols:
                     self._metaActiveCols.append(c)
-                else:
+                elif c not in self._activeCols:
                     self._activeCols.append(c)
         elif path:
             pass
@@ -437,14 +442,14 @@ class Pipeline:
                 if not continueAnyways:
                     print("Publish canceled.")
                     return
-        t = sc.Table(self._schema.id, self.view)
+        t = sc.Table(self._entityViewSchema.id, self.view)
         print("Storing to Synapse...")
         t_online = self.syn.store(t)
         print("Fetching new table index...")
-        self.view = utils.synread(self.syn, self._schema.id)
+        self.view = utils.synread(self.syn, self._entityViewSchema.id)
         self._index = self.view.index
         print("You're good to go :~)")
-        return self._schema.id
+        return self._entityViewSchema.id
 
     def _getUserConfirmation(self, message="Proceed anyways? (y) or (n): "):
         """ Get confirmation from user.
@@ -473,7 +478,7 @@ class Pipeline:
 
     def onweb(self):
         """ View the file view which `self.view` derives from in a browser. """
-        self.syn.onweb(self._schema.id)
+        self.syn.onweb(self._entityViewSchema.id)
 
     def _validate(self):
         """ Validate `self.view` before publishing to warn of possible errors.
@@ -487,6 +492,16 @@ class Pipeline:
             col, hasna = i
             if hasna:
                 warnings.append("{} has null values.".format(col))
+        # cross check values with allowed values in self.schema
+        if self.schema is not None:
+            malformed_values = schemaModule.validateView(self.view, self.schema)
+            if malformed_values:
+                for k in malformed_values:
+                    warnings.append("{} contains the following values which are "
+                                    "not specified in the schema: {}".format(
+                                        k, ", ".join(map(str, malformed_values[k]))) +
+                                    "\n\tPossible values are {}".format(
+                                        ", ".join(self.schema.loc[k].value.values)))
         return warnings
 
     def removeActiveCols(self, activeCols):
@@ -568,9 +583,10 @@ class Pipeline:
             Synapse IDs of items to include in file view.
         addCols : dict, list, or str
             Columns to add in addition to the default file view columns.
-        schema : str
+        schema : str or pandas.DataFrame
             A path to a .json file specifying a schema the file view should
-            conform to.
+            conform to -- or a pandas.DataFrame alreay in flattened format.
+            (See `schema.flattenJson`).
 
         If `addCols` is a dict:
             Add keys as columns. If a key's value is `None`, then insert an empty
@@ -593,31 +609,54 @@ class Pipeline:
         -------
         Synapse ID of newly created fileview.
         """
-        self.backup("CreateFileView")
+        self.backup("createFileView")
+
+        # Fetch default keys, plus any preexisting annotation keys
         if isinstance(scope, str):
             scope = [scope]
         params = {'scope': scope, 'viewType': 'file'}
         cols = self.syn.restPOST('/column/view/scope',
                                  json.dumps(params))['results']
+
+        # Store flattened schema, add keys to active columns list.
+        if self.schema is None:
+            self.schema = (
+                    schemaModule.flattenJson(schema) if isinstance(schema, str)
+                    else schema)
+        if self.schema is not None:
+            for k in self.schema.index.unique():
+                self.addActiveCols(k)
+            schemaCols = utils.makeColumns(list(self.schema.index.unique()),
+                    asSynapseCols=False)
+            cols = self._getUniqueCols(schemaCols, cols)
+
+        # Add keys defined during initialization
         if self._activeCols:
             activeCols = utils.makeColumns(self._activeCols,
                                            asSynapseCols=False)
             cols = self._getUniqueCols(activeCols, cols)
+
+        # Add keys passed to addCols
         if addCols:
-            for k in addCols:
-                if addCols[k] is None and k not in self._activeCols:
-                    self._activeCols.append(k)
+            if isinstance(addCols, dict) and addCols[k] is None:
+                unspecifiedCols = [k for k in addCols if addCols[k] is None]
+                self.addActiveCols(unspecifiedCols)
+            elif isinstance(addCols, list):
+                self.addActiveCols(addCols)
             newCols = utils.makeColumns(addCols, asSynapseCols=False)
             cols = self._getUniqueCols(newCols, cols)
+
+        # Store columns to Synapse as EntityViewSchema. Default column values
+        # are added to `self.view` but not yet stored to Synapse.
         cols = [sc.Column(**c) for c in cols]
-        schema = sc.EntityViewSchema(name=name, columns=cols,
+        entityViewSchema = sc.EntityViewSchema(name=name, columns=cols,
                                      parent=parent, scopes=scope)
-        self._schema = self.syn.store(schema)
-        self.view = utils.synread(self.syn, self._schema.id)
+        self._entityViewSchema = self.syn.store(entityViewSchema)
+        self.view = utils.synread(self.syn, self._entityViewSchema.id)
         self._index = self.view.index
         if isinstance(addCols, dict):
             self.addDefaultValues(addCols, False)
-        return self._schema.id
+        return self._entityViewSchema.id
 
     def transferLinks(self, cols=None, on=None, how='left', dropOn=True):
         """ Copy metadata to `self.view`, matching on `self.keyCol`.

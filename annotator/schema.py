@@ -3,6 +3,7 @@ import os
 import requests
 import json
 import pandas as pd
+from . import utils
 
 
 def moduleJsonPath(releaseVersion=None):
@@ -91,7 +92,7 @@ def flattenJson(path, module=None):
     return module_df
 
 
-def validateView(view, schema):
+def validateView(view, schema, syn=None):
     """ Check that a view conforms with a schema.
 
     Parameters
@@ -102,9 +103,22 @@ def validateView(view, schema):
     schema : pandas DataFrame, str
         A DataFrame in flattened schema format (see flattenJson) or
         path to .json file.
+    syn : synapseclient.Synapse
+        Optional. A Synapse object for retreiving `view` from Synapse.
+        Defaults to None.
 
     Returns
     -------
-    bool
+    dict of malformed values.
     """
-    pass
+    view = utils.synread(syn, view)
+    schema = flattenJson(schema) if isinstance(schema, str) else schema
+    to_examine = schema.index.intersection(view.columns)
+    malformed = {}
+    for k in to_examine:
+        allowed_vals = set(schema.loc[k].value)
+        actual_vals = set(view.loc[:,k].unique())
+        malformed_vals = actual_vals.difference(allowed_vals)
+        if malformed_vals:
+            malformed[k] = malformed_vals
+    return malformed
