@@ -116,7 +116,7 @@ class Pipeline:
     def metaShape(self):
         """ Print shape of `self._meta` """
         if hasattr(self._meta, 'shape'):
-            print(self._meta.shape())
+            print(self._meta.shape)
         else:
             print("No metadata view set.")
 
