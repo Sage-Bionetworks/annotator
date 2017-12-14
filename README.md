@@ -4,6 +4,30 @@
  * Keeps changes local until you are ready to push to Synapse. Easily revert back to a previous file view state.
  * Automatic validation methods to help verify that changes propogate correctly and warnings when potential mistakes have been introduced into the annotations.
 
+Installation
+------------
+
+The annotator has been built and tested on Python 2.7 and 3.6 on Mac OS X.
+
+### Install using pip
+
+    (sudo) pip install git+https://github.com/Sage-Bionetworks/annotator.git
+
+### Install from source
+
+Clone the [source code repository](https://github.com/Sage-Bionetworks/annotator.git).
+
+    git clone https://github.com/Sage-Bionetworks/annotator.git
+    cd annotator
+    python setup.py install
+
+#### Install develop branch
+
+    git clone https://github.com/Sage-Bionetworks/annotator.git
+    cd annotator
+    git checkout develop
+    python setup.py install
+
 ## Example Usage
 
 We have files in syn1234567 with the following properties:
