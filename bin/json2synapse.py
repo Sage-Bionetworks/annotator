@@ -65,7 +65,7 @@ def main():
     if args.releaseVersion is not None:
         releaseVersion = args.releaseVersion
     else:
-        releaseVersion = None
+        releaseVersion = schema.getAnnotationsRelease()
 
     all_modules = []
     key = ["key", "value", "module"]
