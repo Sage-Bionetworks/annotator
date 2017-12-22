@@ -71,6 +71,15 @@ def clipboardToDict(sep):
     return d
 
 
+def drop(labels, axis):
+    """ Delete rows or columns from a file view on Synapse.
+
+    Parameters
+    ----------
+    labels : str, list
+        Can either be a str indicating
+    axis : int
+
 def _keyValCols(keys, values, asSynapseCols):
     """ Get Synapse Column compatible objects from `keys` and `values`.
 
