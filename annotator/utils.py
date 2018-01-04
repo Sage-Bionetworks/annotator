@@ -71,40 +71,6 @@ def clipboardToDict(sep):
     return d
 
 
-def dropColumns(syn, target, cols, schema=None):
-    """ Delete columns from a file view on Synapse.
-
-    Parameters
-    ----------
-    syn : synapseclient.Synapse
-    target : str, pandas.DataFrame
-        The Synapse ID of a Synapse Entity or pandas DataFrame.
-        If a pandas.DataFrame, must specify a schema to synchronize
-        with on Synapse.
-    cols : str, list
-        A str or list of str indicating column names to drop.
-    schema : synapseclient.table.EntityViewSchema
-        Optional. Only required when passing a pandas.DataFrame as target.
-        Otherwise is overwritten by the schema fetched from Synapse for
-        the given target.
-
-    Returns
-    -------
-    synapseclient.table.EntityViewSchema
-    """
-    if isinstance(target, str):
-        schema = syn.get(target)
-        cols_ = syn.getTableColumns(target)
-        for c in cols_:
-            if c.name in cols:
-                schema.removeColumn(c)
-    elif isinstance(target, pd.DataFrame):
-        col_ids = {k: v for k, v in zip(target.columns.values, schema['columnIds'])}
-        for c in cols:
-            schema.removeColumn(col_ids[c])
-    schema = syn.store(schema)
-    return schema
-
 def _keyValCols(keys, values, asSynapseCols):
     """ Get Synapse Column compatible objects from `keys` and `values`.
 
