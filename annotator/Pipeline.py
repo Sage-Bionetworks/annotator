@@ -102,7 +102,7 @@ class Pipeline:
         else:
             print("No data view set.")
 
-    def drop(labels, axis):
+    def drop(self, labels, axis):
         """ Delete rows or columns from a file view on Synapse.*
             Rows are only dropped locally. Deleting rows from a
             file view on Synapse would require deleting the file itself.
@@ -121,8 +121,13 @@ class Pipeline:
         -------
         A list of indices deleted.
         """
-        if axis == 1:
-            self.schema = utils.dropColumns(self.view, labels, self.schema)
+        labels = [labels] if isinstance(labels, str) else labels
+        if axis == 0:
+            self._index = self._index.drop(labels)
+        elif axis == 1:
+            self._entityViewSchema = utils.dropColumns(self.syn, self.view, labels, self._entityViewSchema)
+            if isinstance(self.schema, pd.DataFrame):
+                self.schema = self.schema[[l not in labels for l in self.schema.key]]
         self.view = self.view.drop(labels, axis=axis)
 
     def metaHead(self):

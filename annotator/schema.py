@@ -156,6 +156,7 @@ def dropColumns(syn, target, cols, schema=None):
     -------
     synapseclient.table.EntityViewSchema
     """
+    cols = [cols] if isinstance(cols, str) else cols
     if isinstance(target, str):
         schema = syn.get(target)
         cols_ = syn.getTableColumns(target)
