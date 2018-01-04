@@ -44,9 +44,10 @@ class Pipeline:
         """
         self.syn = syn
         self.view = view if view is None else self._parseView(view, sortCols)
-        self._entityViewSchema = self.syn.get(view) if isinstance(view, str) else None
+        self._entityViewSchema = (self.syn.get(view)
+                                  if isinstance(view, str) else None)
         self.schema = (schemaModule.flattenJson(schema)
-                        if isinstance(schema, str) else schema)
+                       if isinstance(schema, str) else schema)
         self._index = self.view.index if isinstance(
                 self.view, pd.DataFrame) else None
         self._activeCols = []
@@ -125,9 +126,11 @@ class Pipeline:
         if axis == 0:
             self._index = self._index.drop(labels)
         elif axis == 1:
-            self._entityViewSchema = utils.dropColumns(self.syn, self.view, labels, self._entityViewSchema)
+            self._entityViewSchema = utils.dropColumns(
+                    self.syn, self.view, labels, self._entityViewSchema)
             if isinstance(self.schema, pd.DataFrame):
-                self.schema = self.schema[[l not in labels for l in self.schema.key]]
+                self.schema = self.schema[[l not in labels
+                                           for l in self.schema.key]]
         self.view = self.view.drop(labels, axis=axis)
 
     def metaHead(self):
@@ -655,7 +658,7 @@ class Pipeline:
             for k in self.schema.index.unique():
                 self.addActiveCols(k)
             schemaCols = utils.makeColumns(list(self.schema.index.unique()),
-                    asSynapseCols=False)
+                                           asSynapseCols=False)
             cols = self._getUniqueCols(schemaCols, cols)
 
         # Add keys defined during initialization
@@ -678,7 +681,7 @@ class Pipeline:
         # are added to `self.view` but not yet stored to Synapse.
         cols = [sc.Column(**c) for c in cols]
         entityViewSchema = sc.EntityViewSchema(name=name, columns=cols,
-                                     parent=parent, scopes=scope)
+                                               parent=parent, scopes=scope)
         self._entityViewSchema = self.syn.store(entityViewSchema)
         self.view = utils.synread(self.syn, self._entityViewSchema.id)
         self._index = self.view.index
