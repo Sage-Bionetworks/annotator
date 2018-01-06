@@ -2,9 +2,10 @@ from __future__ import print_function
 import pandas as pd
 import synapseclient as sc
 import re
+import json
 
 
-def synread(syn_, obj, sortCols=True):
+def synread(syn_, obj, silent=True, sortCols=True):
     """ A simple way to read in Synapse entities to pandas.DataFrame objects.
 
     Parameters
@@ -27,10 +28,11 @@ def synread(syn_, obj, sortCols=True):
     elif isinstance(obj, str):
         f = syn_.get(obj)
         d = _synread(obj, f, syn_, sortCols)
-        if hasattr(d, 'head'):
-            print(d.head())
-        if hasattr(d, 'shape'):
-            print("Full size:", d.shape)
+        if not silent:
+            if hasattr(d, 'head'):
+                print(d.head())
+            if hasattr(d, 'shape'):
+                print("Full size:", d.shape)
     else:  # is list-like
         files = list(map(syn_.get, obj))
         d = [_synread(synId_, f, syn_, sortCols)
@@ -205,6 +207,62 @@ def dropColumns(syn, target, cols, schema=None):
             schema.removeColumn(c)
     schema = syn.store(schema)
     return schema
+
+
+def addToScope(syn, target, scope, addCols):
+    """ Add further Folders/Projects to the scope of a file view.
+
+    Parameters
+    ----------
+    syn : synapseclient.Synapse
+    target : str, synapseclient.Schema
+        The Synapse ID of the file view to update or its schema.
+    scope : str, list
+        The Synapse IDs of the entites to add to the scope.
+
+    Returns
+    -------
+    synapseclient.Schema
+    """
+    scope = [scope] if isinstance(scope, str) else scope
+    target = syn.get(target) if isinstance(target, str) else target
+    cols = list(syn.getTableColumns(target.id))
+    totalScope = target['scopeIds']
+    for s in scope:
+        totalScope.append(s)
+    # We need to preserve columns that are currently in the file view
+    # but aren't automatically created when synapseclient.EntityViewSchema'ing.
+    defaultCols = getDefaultColumnsForScope(syn, totalScope)
+    defaultCols = [sc.Column(**c) for c in defaultCols]
+    colNames = [c['name'] for c in cols]
+    for c in defaultCols: # Preexisting columns have priority over defaults
+        if c['name'] not in colNames:
+            cols.append(c)
+    schema = sc.EntityViewSchema(name=target.name, parent=target.parentId,
+            columns=cols, scopes=totalScope, add_default_columns=False)
+    schema = syn.store(schema)
+    return schema
+
+
+def getDefaultColumnsForScope(syn, scope):
+    """ Fetches the columns which would be used in the creation
+    of a file view with the given scope.
+
+    Parameters
+    ----------
+    syn : synapseclient.Synapse
+    scope : str, list
+        The Synapse IDs of the entites to fetch columns for.
+
+    Returns
+    -------
+    list of dict
+    """
+    scope = [scope] if isinstance(scope, str) else scope
+    params = {'scope': scope, 'viewType': 'file'}
+    cols = syn.restPOST('/column/view/scope',
+                             json.dumps(params))['results']
+    return cols
 
 
 def combineSynapseTabulars(syn, tabulars, axis=0):

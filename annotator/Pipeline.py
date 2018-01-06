@@ -2,7 +2,6 @@ from __future__ import print_function
 import pandas as pd
 import synapseclient as sc
 import readline
-import json
 from . import utils
 from . import schema as schemaModule
 from copy import deepcopy
@@ -205,6 +204,30 @@ class Pipeline:
             self._prettyPrintColumns(self._metaActiveColumns, style)
         else:
             print("No active columns.")
+
+    def addView(self, scope):
+        """ Add further Folders/Projects to the scope of `self.view`.
+
+        Parameters
+        ----------
+        scope : str, list
+            The Synapse IDs of the entites to add to the scope.
+
+        Returns
+        -------
+        synapseclient.Schema
+        """
+        self._entityViewSchema = utils.addToScope(self.syn,
+                self._entityViewSchema, scope)
+        # Assuming row version/id values stay the same for the before-update
+        # rows, we can carry over values from the old view.
+        oldIndices = self._index
+        oldColumns = self.view.columns
+        newView = utils.synread(self.syn, self._entityViewSchema.id, silent=True)
+        for c in oldColumns:
+            newView.loc[oldIndices,c] = self.view[c].values
+        self.view = newView
+        self._index = self.view.index
 
     def addActiveCols(self, activeCols, path=False, isMeta=False, backup=True):
         """ Add column names to `self._activeCols` or `self._metaActiveCols`.
@@ -442,7 +465,7 @@ class Pipeline:
         TypeError if view is not a str, list, or pandas.DataFrame
         """
         if isinstance(view, str):
-            return utils.synread(self.syn, view, sortCols)
+            return utils.synread(self.syn, view, sortCols=sortCols)
         elif isinstance(view, list) and meta:
             return utils.combineSynapseTabulars(self.syn, view, axis=1)
         elif isinstance(view, pd.DataFrame):
@@ -643,11 +666,7 @@ class Pipeline:
         self.backup("createFileView")
 
         # Fetch default keys, plus any preexisting annotation keys
-        if isinstance(scope, str):
-            scope = [scope]
-        params = {'scope': scope, 'viewType': 'file'}
-        cols = self.syn.restPOST('/column/view/scope',
-                                 json.dumps(params))['results']
+        cols = utils.getDefaultColumnsForScope(self.syn, scope)
 
         # Store flattened schema, add keys to active columns list.
         if self.schema is None:
