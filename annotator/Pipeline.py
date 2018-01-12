@@ -496,6 +496,52 @@ class Pipeline:
                 if not continueAnyways:
                     print("Publish canceled.")
                     return
+        # check for differences between `view` schema and Synapse schema
+        diffs = schemaModule.diff(self.syn, self.view, self._entityViewSchema.id)
+        if not diffs['indicesMatch']:
+            print("Indices of local schema do not match"
+                  "indices of Synapse schema.")
+            if len(diffs['raw']['df']) == len(self.view):
+                print("It is possible to reset the indices of the local "
+                      "schema to those of the Synapse schema.")
+                print("Doing so when the row ordering has not been preserved "
+                      "could result in a loss of Table data.")
+                resetIndices = self._getUserConfirmation(
+                    "Reset Indices? (y) or (n)")
+                if resetIndices:
+                    print("Local view indices reset to Synapse indices")
+                    self.view.index = diffs['raw']['df'].index
+                else:
+                    print("Indices not reset. Publish canceled.")
+                    return
+            else:
+                print("Publish canceled.")
+                return
+        schema = None # cache for potential use later
+        if diffs['missingInSchema']:
+            schema = syn.get(self._entityViewSchema.id) # update cached schema
+            newCols = utils.makeColumns(self.view[diffs['missingInSchema']])
+            for c in newCols:
+                schema.addColumn(c)
+            schema = syn.store(schema)
+            self._entityViewSchema = schema
+        if diffs['missingInView']:
+            schema = syn.get(self._entityViewSchema) if schema is None else schema
+            # default behavior is to leave values unchanged on Synapse
+            for c in diffs['missingInView']:
+                for i in self.view.index:
+                    self.view.loc[i,c] = diffs['raw']['df'].loc[i,c]
+        if diffs['tooSmallCols']:
+            schema = syn.get(self._entityViewSchema) if schema is None else schema
+            schema_df = pd.DataFrame(diffs['raw']['cols']).set_index('name')
+            for c in diffs['tooSmallCols']:
+                name, size = c
+                schema_df.loc[name, 'maximumSize'] = size
+            cols = schema_df.to_dict(orient='records')
+            ev = sc.EntityViewSchema(
+                    name=schema.name,
+                    parent=schema.parentId,
+                    cols = map(lambda c: sc.Column(**c), cols))
         t = sc.Table(self._entityViewSchema.id, self.view)
         print("Storing to Synapse...")
         t_online = self.syn.store(t)
@@ -537,10 +583,12 @@ class Pipeline:
     def _validate(self):
         """ Validate `self.view` before publishing to warn of possible errors.
 
-        Currently only checks if any active columns have any null values.
+        Checks for:
+            NaN/None values in active columns
+            Malformed or missing values in columns with values in `self.schema`.
         """
         warnings = []
-        # check that no columns have null values
+        # check that no active columns have null values
         null_cols = self.view[self._activeCols].isnull().any()
         for i in null_cols.iteritems():
             col, hasna = i

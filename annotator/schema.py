@@ -104,7 +104,7 @@ def flattenJson(path, module=None):
 
 
 def validateView(view, schema, syn=None):
-    """ Check that a view conforms with a schema.
+    """ Check that the values in a view conform with a schema.
 
     Parameters
     ----------
@@ -133,3 +133,70 @@ def validateView(view, schema, syn=None):
         if malformed_vals:
             malformed[k] = malformed_vals
     return malformed
+
+
+def diff(syn, view, schema):
+    """ Checks whether a pandas DataFrame could be pushed to Synapse as it is
+    currently formatted. This implies the indices match up, all header columns
+    are present, and string values within a column all fit within the max size
+    allowable by that column.
+
+    Parameters
+    ----------
+    syn : synapseclient.Synapse
+    view : pandas.DataFrame
+    schema : str, synapseclient.Schema
+        The Synapse ID or Schema object of a file view on Synapse.
+
+    Returns
+    -------
+    dict {
+        'indicesMatch': bool indicating whether `view` indices are a subset
+            of `schema` indices,
+        'missingInSchema': list containing column names present in `view`
+            but not in `schema`,
+        'missingInView': list containing column names present in `schema`
+            but not in `view`,
+        'tooSmallCols': list containg tuples of (column name, max `view`
+            value size). Only columns that have values in `view` which exceed
+            the max allowable value size for the respective column in `schema`
+            will be included.
+        'raw': dict containing cached remote entities used during this function
+            to save the caller some time in the case the entities need to be
+            referenced upon finding a difference between `view` and `schema`
+        }
+    """
+    result = {}
+    synapseId = schema if isinstance(schema, str) else schema.id
+    print("Fetching index...")
+    df = syn.tableQuery(
+            "select * from {}".format(synapseId)).asDataFrame()
+    schemaIndices = df.index
+    print("Getting table columns...")
+    schemaCols = list(syn.getTableColumns(synapseId))
+    # Check for invalid indices
+    invalidIndices = view.index.difference(schemaIndices)
+    result['indicesMatch'] = False if len(invalidIndices) else True
+    # Check for missing header values
+    schemaColNames = [c['name'] for c in schemaCols]
+    missingInSchema = view.columns.difference(schemaColNames)
+    result['missingInSchema'] = missingInSchema
+    missingInView = list(set(schemaColNames).difference(view.columns))
+    result['missingInView'] = missingInView
+    result['tooSmallCols'] = []
+    for c in schemaCols:
+        if (c['columnType'] == 'STRING' and 'maximumSize' in c and
+                c['name'] in view.columns):
+            s = view[c['name']].astype(str)
+            # pandas interprets int Series with None types as float.
+            # This results in values that seem two chars longer than necessary.
+            if (pd.np.issubdtype(view[c['name']].dtype, pd.np.float_) and
+                    all(s.agg(lambda x: x == 'nan' or x[-2:] == '.0'))):
+                s = pd.Series([str(int(i)) for i in view[c['name']].values
+                        if pd.notnull(i)])
+            # if s was entirely NaN in the conditional above it will be empty.
+            biggestValue = s.str.len().max() if len(s) else -1
+            if biggestValue > c['maximumSize']:
+                result['tooSmallCols'].append((c['name'], biggestValue))
+    result['raw'] = {'df': df, 'cols': schemaCols}
+    return result
