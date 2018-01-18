@@ -94,7 +94,7 @@ def _keyValCols(keys, values, asSynapseCols):
              'columnType': "STRING", "defaultValue": v}
             for k, v, l in zip(keys, values, val_length)]
     if asSynapseCols:
-        cols = list(map(sc.Column, cols))
+        cols = list(map(lambda c: sc.Column(**c), cols))
     return cols
 
 
