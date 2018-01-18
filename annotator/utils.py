@@ -89,6 +89,9 @@ def _keyValCols(keys, values, asSynapseCols):
     -------
     A list of dictionaries compatible with synapseclient.Column objects.
     """
+    sanitize = lambda v : v if pd.notnull(v) else ''
+    keys = list(map(sanitize, keys))
+    values = list(map(sanitize, values))
     val_length = map(lambda v: len(v) if v else 50, values)
     cols = [{'name': k, 'maximumSize': l,
              'columnType': "STRING", "defaultValue": v}
@@ -112,8 +115,8 @@ def _colsFromFile(fromFile, asSynapseCols):
     -------
     A list of dictionaries compatible with synapseclient.Column objects.
     """
-    f = pd.read_csv(fromFile, header=None)
-    return _keyValCols(f[0].values, f[1].values, asSynapseCols)
+    f = pd.read_csv(fromFile, names=['keys', 'values'])
+    return _keyValCols(f['keys'], f['values'], asSynapseCols)
 
 
 def _colsFromDict(d, asSynapseCols):
