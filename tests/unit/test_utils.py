@@ -3,14 +3,14 @@ import annotator
 import synapseclient
 import pandas
 import os
+import uuid
 import tempfile
 
 def test_setUp(syn, sampleEntities, entities):
-    """ Set up working environment on Synapse,
-    passes if set-up is successful
+    """ #Set up working environment on Synapse,
+    #passes if set-up is successful
     """
     assert True
-
 
 def test_synread_csv(syn, sampleEntities, entities):
     df = annotator.utils.synread(syn, entities['files'][0].id, sortCols=False)
@@ -93,3 +93,24 @@ class TestColumnCreation(object):
             c['maximumSize'] = 50
             c['defaultValue'] = ''
         assert result == correctResult
+
+    def test_makeColumns(self):
+        with pytest.raises(TypeError):
+            annotator.utils.makeColumns(float("nan"))
+
+
+class TestColumnModification(object):
+    def test_dropColumns_str(self, syn, entity_view):
+        schema = annotator.utils.dropColumns(syn, entity_view.id,
+                                             cols='etag')
+        new_view = syn.tableQuery("select * from {}".format(schema.id))
+        new_view = new_view.asDataFrame()
+        assert 'etag' not in new_view.columns
+
+    def test_dropColumns_list(self, syn, entity_view):
+        schema = annotator.utils.dropColumns(syn, entity_view.id,
+                                             cols=['type', 'createdOn'])
+        new_view = syn.tableQuery("select * from {}".format(schema.id))
+        new_view = new_view.asDataFrame()
+        assert 'type' not in new_view.columns \
+                and 'createdOn' not in new_view.columns

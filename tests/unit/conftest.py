@@ -3,6 +3,7 @@ import sys
 import logging
 import pandas
 import synapseclient
+import uuid
 
 
 SAMPLE_FILE = "../sampleFile.csv"
@@ -23,10 +24,29 @@ def sampleEntities():
 
 
 @pytest.fixture(scope='session')
-def entities(syn, sampleEntities):
-    import uuid  # random project name
+def project(syn):
     project = synapseclient.Project(str(uuid.uuid4()))
     project = syn.store(project)
+    yield project
+    syn.delete(project)
+
+
+def _entity_view(syn_, project_):
+    entity_view = synapseclient.EntityViewSchema(
+            name=str(uuid.uuid4()),
+            parent=project_,
+            scopes=[project_])
+    entity_view = syn_.store(entity_view)
+    return entity_view
+
+
+@pytest.fixture
+def entity_view(syn, project):
+    entity_view = _entity_view(syn, project)
+    return entity_view
+
+@pytest.fixture(scope='session')
+def entities(syn, sampleEntities, project):
     # store sample files
     _file = synapseclient.File(path=SAMPLE_FILE, name='file1.csv',
                                parent=project)
@@ -43,19 +63,14 @@ def entities(syn, sampleEntities):
     # store a sample table (same values as sample file)
     df = sampleEntities['data']
     cols = synapseclient.as_table_columns(df)
-    schema = synapseclient.Schema(name="table", columns=cols,
+    schema = synapseclient.Schema(name=str(uuid.uuid4()), columns=cols,
                                   parent=project)
     schema = syn.store(schema)
     table = syn.store(synapseclient.Table(schema, df))
     # store a sample file view
-    entity_view = synapseclient.EntityViewSchema(
-            name='entity_view',
-            parent=project,
-            scopes=[project])
-    entity_view = syn.store(entity_view)
+    entity_view = _entity_view(syn, project)
     ents = {'files': [_file, _file2, _file3],
             'meta': meta,
             'schema': schema,
             'entity_view': entity_view}
-    yield ents
-    syn.delete(project)
+    return ents

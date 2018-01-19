@@ -178,32 +178,27 @@ def makeColumns(obj, asSynapseCols=True):
         return _colsFromDict(obj, asSynapseCols)
     elif isinstance(obj, list):
         return _colsFromList(obj, asSynapseCols)
+    else:
+        raise TypeError("{} is not a supported type.".format(type(obj)))
 
 
-def dropColumns(syn, target, cols, schema=None):
+def dropColumns(syn, target, cols):
     """ Delete columns from a file view on Synapse.
 
     Parameters
     ----------
     syn : synapseclient.Synapse
-    target : str, pandas.DataFrame
-        The Synapse ID of a Synapse Entity or pandas DataFrame.
-        If a pandas.DataFrame, must specify a schema to synchronize
-        with on Synapse.
+    target : str, synapseclient.Schema
+        The Synapse ID of a Synapse Table or File View, or its schema.
     cols : str, list
         A str or list of str indicating column names to drop.
-    schema : synapseclient.table.EntityViewSchema
-        Optional. Only required when passing a pandas.DataFrame as target.
-        Otherwise is overwritten by the schema fetched from Synapse for
-        the given target.
 
     Returns
     -------
     synapseclient.table.EntityViewSchema
     """
     cols = [cols] if isinstance(cols, str) else cols
-    if isinstance(target, str):
-        schema = syn.get(target)
+    schema = syn.get(target) if isinstance(target, str) else target
     cols_ = syn.getTableColumns(schema.id)
     for c in cols_:
         if c.name in cols:
