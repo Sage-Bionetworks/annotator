@@ -207,7 +207,7 @@ def dropColumns(syn, target, cols):
     return schema
 
 
-def addToScope(syn, target, scope, addCols):
+def addToScope(syn, target, scope):
     """ Add further Folders/Projects to the scope of a file view.
 
     Parameters

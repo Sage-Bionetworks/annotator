@@ -5,12 +5,15 @@ import pandas
 import os
 import uuid
 import tempfile
+from . import conftest
+
 
 def test_setUp(syn, sampleEntities, entities):
     """ #Set up working environment on Synapse,
     #passes if set-up is successful
     """
     assert True
+
 
 def test_synread_csv(syn, sampleEntities, entities):
     df = annotator.utils.synread(syn, entities['files'][0].id, sortCols=False)
@@ -44,11 +47,13 @@ def test_synread_list_csv(syn, sampleEntities, entities):
             sampleEntities['data'],
             check_like=True)
 
+
 def test_clipboardToDict():
     string = "hello:world\ngoodbye:moon"
     os.system("echo '{}' | pbcopy".format(string))
     result = annotator.utils.clipboardToDict(":")
-    assert result == {'hello':'world', 'goodbye':'moon'}
+    assert result == {'hello': 'world', 'goodbye': 'moon'}
+
 
 class TestColumnCreation(object):
     @pytest.fixture
@@ -113,4 +118,18 @@ class TestColumnModification(object):
         new_view = syn.tableQuery("select * from {}".format(schema.id))
         new_view = new_view.asDataFrame()
         assert 'type' not in new_view.columns \
-                and 'createdOn' not in new_view.columns
+            and 'createdOn' not in new_view.columns
+
+
+class TestScopeModification(object):
+    def test_addToScope(self, syn, project):
+        folder_one = conftest._folder(syn, project)
+        folder_two = conftest._folder(syn, project)
+        file_one = conftest._file(syn, folder_one, {'color': 'red'})
+        file_two = conftest._file(syn, folder_two, {'pizza': 'pineapple'})
+        entity_view = conftest._entity_view(syn, project, folder_one.id)
+        schema = annotator.utils.addToScope(syn, entity_view, folder_two.id)
+        q = syn.tableQuery("select * from {}".format(schema.id))
+        df = q.asDataFrame()
+        assert 'pizza' in df.columns
+        assert len(df) == 2

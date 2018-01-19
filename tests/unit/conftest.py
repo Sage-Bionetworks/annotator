@@ -31,12 +31,40 @@ def project(syn):
     syn.delete(project)
 
 
-def _entity_view(syn_, project_):
+def _file(syn, parent, annotations=None):
+    _file = synapseclient.File(path=SAMPLE_FILE, name=str(uuid.uuid4()),
+                               parent=parent)
+    if annotations:
+        for a in annotations.items():
+            key, value = a
+            _file[key] = value
+    _file = syn.store(_file)
+    return _file
+
+
+@pytest.fixture
+def fileFixture(syn, project):
+    return _file(syn, project)
+
+
+def _folder(syn, parent):
+    folder = synapseclient.Folder(str(uuid.uuid4()), parent=parent)
+    folder = syn.store(folder)
+    return folder
+
+
+@pytest.fixture
+def folder(syn, project):
+    return _folder(syn, project)
+
+
+def _entity_view(syn, project, scopes=None):
+    scopes = [project] if scopes is None else scopes
     entity_view = synapseclient.EntityViewSchema(
             name=str(uuid.uuid4()),
-            parent=project_,
-            scopes=[project_])
-    entity_view = syn_.store(entity_view)
+            parent=project,
+            scopes=scopes)
+    entity_view = syn.store(entity_view)
     return entity_view
 
 
@@ -44,6 +72,7 @@ def _entity_view(syn_, project_):
 def entity_view(syn, project):
     entity_view = _entity_view(syn, project)
     return entity_view
+
 
 @pytest.fixture(scope='session')
 def entities(syn, sampleEntities, project):
