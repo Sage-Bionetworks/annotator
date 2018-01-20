@@ -8,44 +8,36 @@ import tempfile
 from . import conftest
 
 
-def test_setUp(syn, sampleEntities, entities):
-    """ #Set up working environment on Synapse,
-    #passes if set-up is successful
-    """
-    assert True
+class TestSynread(object):
+    def test_synread_csv(self, syn, sampleFile, entities):
+        df = annotator.utils.synread(syn, entities['files'][0].id,
+                                     sortCols=False)
+        pandas.testing.assert_frame_equal(df, sampleFile, check_like=True)
 
+    def test_synread_table(self, syn, sampleFile, entities):
+        df = annotator.utils.synread(syn, entities['table_schema'].id,
+                                     sortCols=False)
+        pandas.testing.assert_frame_equal(
+                df.reset_index(drop=True),
+                sampleFile,
+                check_like=True)
 
-def test_synread_csv(syn, sampleEntities, entities):
-    df = annotator.utils.synread(syn, entities['files'][0].id, sortCols=False)
-    pandas.testing.assert_frame_equal(df, sampleEntities['data'],
-                                      check_like=True)
+    def test_synread_entity_view(self, syn, entities):
+        df = annotator.utils.synread(
+                syn,
+                entities['entity_view'].id,
+                sortCols=False)
+        assert isinstance(df, pandas.DataFrame)
 
-
-def test_synread_table(syn, sampleEntities, entities):
-    df = annotator.utils.synread(syn, entities['schema'].id, sortCols=False)
-    pandas.testing.assert_frame_equal(
-            df.reset_index(drop=True),
-            sampleEntities['data'],
-            check_like=True)
-
-
-def test_synread_entity_view(syn, sampleEntities, entities):
-    df = annotator.utils.synread(
-            syn,
-            entities['entity_view'].id,
-            sortCols=False)
-    assert isinstance(df, pandas.DataFrame)
-
-
-def test_synread_list_csv(syn, sampleEntities, entities):
-    listOfDataFrames = annotator.utils.synread(
-            syn,
-            [f['id'] for f in entities['files']],
-            sortCols=False)
-    pandas.testing.assert_frame_equal(
-            listOfDataFrames[0],
-            sampleEntities['data'],
-            check_like=True)
+    def test_synread_list_csv(self, syn, sampleFile, entities):
+        listOfDataFrames = annotator.utils.synread(
+                syn,
+                [f['id'] for f in entities['files']],
+                sortCols=False)
+        pandas.testing.assert_frame_equal(
+                listOfDataFrames[0],
+                sampleFile,
+                check_like=True)
 
 
 def test_clipboardToDict():
@@ -105,15 +97,15 @@ class TestColumnCreation(object):
 
 
 class TestColumnModification(object):
-    def test_dropColumns_str(self, syn, entity_view):
-        schema = annotator.utils.dropColumns(syn, entity_view.id,
+    def test_dropColumns_str(self, syn, genericEntityView):
+        schema = annotator.utils.dropColumns(syn, genericEntityView.id,
                                              cols='etag')
         new_view = syn.tableQuery("select * from {}".format(schema.id))
         new_view = new_view.asDataFrame()
         assert 'etag' not in new_view.columns
 
-    def test_dropColumns_list(self, syn, entity_view):
-        schema = annotator.utils.dropColumns(syn, entity_view.id,
+    def test_dropColumns_list(self, syn, genericEntityView):
+        schema = annotator.utils.dropColumns(syn, genericEntityView.id,
                                              cols=['type', 'createdOn'])
         new_view = syn.tableQuery("select * from {}".format(schema.id))
         new_view = new_view.asDataFrame()
@@ -123,11 +115,11 @@ class TestColumnModification(object):
 
 class TestScopeModification(object):
     def test_addToScope(self, syn, project):
-        folder_one = conftest._folder(syn, project)
-        folder_two = conftest._folder(syn, project)
-        file_one = conftest._file(syn, folder_one, {'color': 'red'})
-        file_two = conftest._file(syn, folder_two, {'pizza': 'pineapple'})
-        entity_view = conftest._entity_view(syn, project, folder_one.id)
+        folder_one = conftest.folder(syn, project)
+        folder_two = conftest.folder(syn, project)
+        file_one = conftest.file_(syn, folder_one, {'color': 'red'})
+        file_two = conftest.file_(syn, folder_two, {'pizza': 'pineapple'})
+        entity_view = conftest.entity_view(syn, project, folder_one.id)
         schema = annotator.utils.addToScope(syn, entity_view, folder_two.id)
         q = syn.tableQuery("select * from {}".format(schema.id))
         df = q.asDataFrame()
