@@ -344,9 +344,6 @@ def substituteColumnValues(referenceList, mod):
     """
     if isinstance(mod, dict):
         referenceList = [mod[v] if v in mod else v for v in referenceList]
-    else:
-        raise TypeError("{} is not a supported referenceList type".format(
-            type(referenceList)))
     return referenceList
 
 
