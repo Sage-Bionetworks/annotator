@@ -4,6 +4,7 @@ import logging
 import pandas
 import synapseclient
 import uuid
+import annotator
 
 
 SAMPLE_FILE = "https://raw.githubusercontent.com/Sage-Bionetworks/annotator/master/tests/sampleFile.csv"
@@ -124,3 +125,7 @@ def entities(syn, sampleFile, project):
             'table_schema': schema,
             'entity_view': entity_view_}
     return ents
+
+@pytest.fixture(scope='session')
+def genericPipeline(syn):
+    return annotator.Pipeline(syn)

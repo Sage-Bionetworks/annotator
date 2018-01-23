@@ -41,7 +41,10 @@ class Pipeline:
             Optional. Whether to sort the columns lexicographically in
             `view` and/or `meta`. Defaults to True.
         """
-        self.syn = syn
+        if isinstance(syn, sc.Synapse):
+            self.syn = syn
+        else:
+            raise TypeError("syn must be a synapseclient.Synapse object")
         self.view = view if view is None else self._parseView(view, sortCols)
         self._entityViewSchema = (self.syn.get(view)
                                   if isinstance(view, str) else None)
@@ -470,7 +473,7 @@ class Pipeline:
         """
         if isinstance(view, str):
             return utils.synread(self.syn, view, sortCols=sortCols)
-        elif isinstance(view, list) and meta:
+        elif isinstance(view, list) and isMeta:
             return utils.combineSynapseTabulars(self.syn, view, axis=1)
         elif isinstance(view, pd.DataFrame):
             if sortCols:
@@ -524,7 +527,11 @@ class Pipeline:
         Otherwise asks user to input confirmation again.
         """
         proceed = ''
+        counter = 0
         while not proceed:
+            counter += 1
+            if counter > 3:
+                return False  # after three attempts return False
             proceed = input(message)
             if len(proceed) and not proceed[0] in ['Y', 'y', 'N', 'n']:
                 proceed = ''
