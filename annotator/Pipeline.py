@@ -432,19 +432,20 @@ class Pipeline:
             return False
         return True
 
-    def substituteColumnValues(self, col, mod):
+    def substituteColumnValues(self, col, mapping):
         """ Substitute values in a column according to a mapping.
 
         Parameters
         ----------
         col : str
             The column to substitute values in.
-        mod : dict
+        mapping : dict
             Mappings from the old to new values.
         """
         self.backup("substituteColumnValues")
-        self.view.loc[:, col] = utils.substituteColumnValues(
-                self.view[col].values)
+        self.view = utils.substituteColumnValuesLocally(
+                self.view,
+                {col: mapping})
 
     def _parseView(self, view, sortCols, isMeta=False):
         """ Turn `view` into a pandas DataFrame.

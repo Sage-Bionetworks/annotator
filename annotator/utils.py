@@ -332,20 +332,50 @@ def inferValues(df, col, referenceCols):
     return df
 
 
-def substituteColumnValues(referenceList, mod):
-    """ Substitute values in a column according to a mapping.
+def substituteColumnValues(syn, target, mapping):
+    """ Substitute values as specified by a mapping.
 
     Parameters
     ----------
-    referenceList : list
-        The values to substitute.
-    mod : dict
-        Mappings from the old to new values.
-    """
-    if isinstance(mod, dict):
-        referenceList = [mod[v] if v in mod else v for v in referenceList]
-    return referenceList
+    syn : synapseclient.Synapse
+    target : str
+        The Synapse ID of a file view or table.
+    mapping : dict
+        A dict -> dict mapping where keys in the first dict are column names
+        in `target` and keys in the second dict are values to be substituted.
+        For example, in a target with column names 'study' and 'color',
+        `mapping` might look like:
+        {
+            'study': {'goodStudy': 'greatStudy'},
+            'color': {'purple': 'violet', 'yellow': 'YELLOW'}
+        }
 
+    Returns
+    -------
+    pandas.DataFrame
+    """
+    df = synread(syn, target, sortCols=False)
+    result = substituteColumnValuesLocally(df, mapping)
+    table = sc.Table(target, result)
+    table = syn.store(table)
+    return result
+
+def substituteColumnValuesLocally(target, mapping):
+    """ Replace column values in a DataFrame specified by a mapping.
+
+    Parameters
+    ----------
+    target : pandas.DataFrame
+    mapping : dict
+        A dict -> dict mapping where keys in the first dict are column names
+        in `target` and keys in the second dict are values to be substituted.
+    """
+    target = target.copy()
+    for c in mapping:
+        colMapping = mapping[c]
+        target.loc[:, c] = [colMapping[v] if v in colMapping
+                            else v for v in target.loc[:, c]]
+    return target
 
 def colFromRegex(referenceList, regex):
     """ Return a list created by mapping a regular expression to another list.
