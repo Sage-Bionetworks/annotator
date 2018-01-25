@@ -317,7 +317,7 @@ class Pipeline:
         print(self._meta[metaKey].head(), "\n\n")
         while True:
             regex = self._inputDefault("regex: ", regex)
-            newCol = utils.makeColFromRegex(self.view[dataKey].values, regex)
+            newCol = utils.colFromRegex(self.view[dataKey].values, regex)
             missingVals = [v not in self._meta[metaKey].values.astype(str)
                            for v in newCol]
             if any(missingVals):
@@ -370,7 +370,7 @@ class Pipeline:
         """
         self.backup("addFileFormatCol")
         regex = r"\.(\w+)(?:\.gz)?$"
-        filetypeCol = utils.makeColFromRegex(
+        filetypeCol = utils.colFromRegex(
                 self.view[referenceCol].values, regex)
         self.view[newColName] = filetypeCol
 
