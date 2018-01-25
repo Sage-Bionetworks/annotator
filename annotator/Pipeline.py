@@ -688,7 +688,7 @@ class Pipeline:
 
         # Add keys passed to addCols
         if addCols:
-            if isinstance(addCols, dict) and addCols[k] is None:
+            if isinstance(addCols, dict):
                 unspecifiedCols = [k for k in addCols if addCols[k] is None]
                 self.addActiveCols(unspecifiedCols)
             elif isinstance(addCols, list):
