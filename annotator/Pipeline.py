@@ -301,7 +301,7 @@ class Pipeline:
         in `self._meta`.
         """
         if self.view is None or self._meta is None:
-            print("No data view set.")
+            print("A data view and meta view must be set.")
             return
         self.backup("addKeyCol")
         link = self._linkCols(1)
@@ -317,7 +317,8 @@ class Pipeline:
         print(self._meta[metaKey].head(), "\n\n")
         while True:
             regex = self._inputDefault("regex: ", regex)
-            newCol = utils.colFromRegex(self.view[dataKey].values, regex)
+            newCol = utils.colFromRegex(
+                    self.view[dataKey].values.astype(str), regex)
             missingVals = [v not in self._meta[metaKey].values.astype(str)
                            for v in newCol]
             if any(missingVals):
@@ -338,7 +339,7 @@ class Pipeline:
         self.keyCol = metaKey
         self.view[metaKey] = newCol
 
-    def _inputDefault(self, prompt, prefill=''):
+    def _inputDefault(self, prompt, prefill='', tabCompletion=False, possibleValues=None):
         """ Get input from the user from a prompt with preexisting text.
 
         Parameters
@@ -347,16 +348,32 @@ class Pipeline:
             Prompt to user.
         prefill : str
             Preexisting text to fill input with.
+        tabCompletion : bool
+            Whether to use tab-completion.
+        possibleValues : list-like
+            If tab-completion is True, use these values to auto-complete
+            written text.
 
         Returns
         -------
-        User input.
+        str
         """
         readline.set_startup_hook(lambda: readline.insert_text(prefill))
+        def complete(string, state):
+            response = None
+            possible = [s for s in possibleValues if s.startswith(string)]
+            if state < len(possible):
+                response = possible[state]
+            return response
+        if tabCompletion and possibleValues is not None:
+            readline.set_completer(complete)
+            readline.parse_and_bind('tab: complete')
         try:
             return input(prompt)
         finally:
+            #  unset readline properties
             readline.set_startup_hook()
+            readline.set_completer()
 
     def addFileFormatCol(self, referenceCol='name', newColName='fileFormat'):
         """ Add a file format column using a preprogrammed regular expression.
@@ -802,13 +819,16 @@ class Pipeline:
         def _verifyInputIntegrity(i, view):
             if i is '':
                 return -1
-            try:
-                i = int(i)
-                assert i < len(view.columns) and i >= 0
-            except:
-                print("Please enter an integer corresponding to "
-                      "one of the columns above.", "\n")
-                return
+            elif isinstance(i, str) and i in view.columns:
+                return i
+            else:
+                try:
+                    i = int(i)
+                    assert i < len(view.columns) and i >= 0
+                except:
+                    print("Please enter a column name or an integer corresponding "
+                          "to one of the columns above.", "\n")
+                    return
             return i
 
         while iters != 0:
@@ -817,7 +837,8 @@ class Pipeline:
             print()
             data_col = None
             while data_col is None:
-                data_col = input("Select a data column: ")
+                data_col = self._inputDefault("Select a data column: ",
+                        tabCompletion=True, possibleValues=self.view.columns)
                 data_col = _verifyInputIntegrity(data_col, self.view)
             if data_col == -1:
                 return links
@@ -826,12 +847,19 @@ class Pipeline:
             print()
             metadata_col = None
             while metadata_col is None:
-                metadata_col = input("Select a metadata column: ")
+                metadata_col = self._inputDefault("Select a metadata column: ",
+                        tabCompletion=True, possibleValues=self._meta.columns)
                 metadata_col = _verifyInputIntegrity(metadata_col, self._meta)
             if metadata_col == -1:
                 return links
-            data_val = self.view.columns[data_col]
-            metadata_val = self._meta.columns[metadata_col]
+            if isinstance(data_col, int):
+                data_val = self.view.columns[data_col]
+            else:
+                data_val = data_col
+            if isinstance(metadata_col, int):
+                metadata_val = self._meta.columns[metadata_col]
+            else:
+                metadata_val = metadata_col
             links[data_val] = metadata_val
             iters -= 1
         return links
