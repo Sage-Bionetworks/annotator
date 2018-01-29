@@ -62,3 +62,59 @@ class TestConfirmationPrompt(object):
         monkeypatch.setattr('builtins.input', lambda _: next((i for i in inputs)))
         for i in inputs:
             assert not genericPipeline._getUserConfirmation()
+
+class TestActiveColumns(object):
+    @pytest.fixture
+    def pipeline(self, genericPipeline):
+        genericPipeline._activeCols = ["pizza", "pie"]
+        genericPipeline._metaActiveCols = ["pizza", "pie"]
+        return genericPipeline
+
+    def test_removeActiveCols_str(self, pipeline):
+        pipeline.removeActiveCols("pizza", backup=False)
+        assert pipeline._activeCols == ["pie"]
+
+    def test_removeActiveCols_list(self, pipeline):
+        pipeline.removeActiveCols(["pizza", "pie"], backup=False)
+        assert pipeline._activeCols == []
+
+    def test_addActiveCols_str(self, pipeline):
+        pipeline.addActiveCols("marmalade", backup=False)
+        assert "marmalade" in pipeline._activeCols
+
+    def test_addActiveCols_list(self, pipeline):
+        pipeline.addActiveCols(["sunday", "funday"], backup=False)
+        assert pipeline._activeCols == ["pizza", "pie", "sunday", "funday"]
+
+    def test_addActiveCols_dict(self, pipeline):
+        pipeline.addActiveCols({"creme": "brulee", "chai": "latte"}, backup=False)
+        assert "creme" in pipeline._activeCols
+        assert "chai" in pipeline._activeCols
+
+    def test_addActiveCols_dataframe(self, pipeline):
+        df = pandas.DataFrame({"key": ["chai", "creme"], "value": ["latte", "brulee"]})
+        pipeline.addActiveCols(df, backup=False)
+        assert "creme" in pipeline._activeCols
+        assert "chai" in pipeline._activeCols
+
+    def test_addActiveCols_str_meta(self, pipeline):
+        pipeline.addActiveCols("marmalade", isMeta=True, backup=False)
+        assert "marmalade" in pipeline._metaActiveCols
+
+    def test_addActiveCols_list_meta(self, pipeline):
+        pipeline.addActiveCols(["sunday", "funday"], isMeta=True, backup=False)
+        assert pipeline._metaActiveCols == ["pizza", "pie", "sunday", "funday"]
+
+    def test_addActiveCols_dict_meta(self, pipeline):
+        pipeline.addActiveCols({"creme": "brulee", "chai": "latte"},
+                isMeta=True, backup=False)
+        assert "creme" in pipeline._metaActiveCols
+        assert "chai" in pipeline._metaActiveCols
+
+    def test_addActiveCols_dataframe_meta(self, pipeline):
+        df = pandas.DataFrame(
+                {"key": ["chai", "creme"], "value": ["latte", "brulee"]})
+        pipeline.addActiveCols(df, isMeta=True, backup=False)
+        assert "creme" in pipeline._metaActiveCols
+        assert "chai" in pipeline._metaActiveCols
+

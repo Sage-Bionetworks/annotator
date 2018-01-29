@@ -569,7 +569,7 @@ class Pipeline:
                                         ", ".join(self.schema.loc[k].value.values)))
         return warnings
 
-    def removeActiveCols(self, activeCols):
+    def removeActiveCols(self, activeCols, backup=True):
         """ Remove a column name from `self._activeCols`
 
         Parameters
@@ -577,7 +577,8 @@ class Pipeline:
         activeCols : str or list-like
             Column name(s) to remove.
         """
-        self.backup("removeActiveCols")
+        if backup:
+            self.backup("removeActiveCols")
         if isinstance(activeCols, str):
             self._activeCols.remove(activeCols)
         else:  # is list-like
