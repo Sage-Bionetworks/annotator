@@ -127,7 +127,7 @@ class Pipeline:
             self._index = self._index.drop(labels)
         elif axis == 1:
             self._entityViewSchema = utils.dropColumns(
-                    self.syn, self.view, labels, self._entityViewSchema)
+                    self.syn, self._entityViewSchema, labels)
             if isinstance(self.schema, pd.DataFrame):
                 self.schema = self.schema[[l not in labels
                                            for l in self.schema.key]]
