@@ -220,6 +220,8 @@ class Pipeline:
         -------
         synapseclient.Schema
         """
+        if self.view is None or self._entityViewSchema is None:
+            raise RuntimeError("A view must be set before adding to its scope.")
         self._entityViewSchema = utils.addToScope(self.syn,
                 self._entityViewSchema, scope)
         # Assuming row version/id values stay the same for the before-update
