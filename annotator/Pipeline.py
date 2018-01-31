@@ -102,6 +102,7 @@ class Pipeline:
         else:
             print("No data view set.")
 
+
     def drop(self, labels, axis):
         """ Delete rows or columns from a file view on Synapse.*
             Rows are only dropped locally. Deleting rows from a
@@ -131,6 +132,7 @@ class Pipeline:
                 self.schema = self.schema[[l not in labels
                                            for l in self.schema.key]]
         self.view = self.view.drop(labels, axis=axis)
+
 
     def metaHead(self):
         """ Print head of `self._meta` """
@@ -205,6 +207,7 @@ class Pipeline:
         else:
             print("No active columns.")
 
+
     def addView(self, scope):
         """ Add further Folders/Projects to the scope of `self.view`.
 
@@ -228,6 +231,7 @@ class Pipeline:
             newView.loc[oldIndices,c] = self.view[c].values
         self.view = newView
         self._index = self.view.index
+
 
     def addActiveCols(self, activeCols, path=False, isMeta=False, backup=True):
         """ Add column names to `self._activeCols` or `self._metaActiveCols`.
@@ -318,6 +322,7 @@ class Pipeline:
         while True:
             regex = self._inputDefault("regex: ", regex)
             newCol = utils.colFromRegex(self.view[dataKey].values, regex)
+
             missingVals = [v not in self._meta[metaKey].values.astype(str)
                            for v in newCol]
             if any(missingVals):

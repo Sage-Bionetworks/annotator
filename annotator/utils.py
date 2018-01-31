@@ -6,6 +6,7 @@ import json
 
 
 def synread(syn_, obj, silent=True, sortCols=True):
+
     """ A simple way to read in Synapse entities to pandas.DataFrame objects.
 
     Parameters
