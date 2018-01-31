@@ -1,6 +1,7 @@
 import annotator
 import pytest
 import pandas
+from . import conftest
 
 
 class TestInitialization(object):
@@ -92,7 +93,8 @@ class TestActiveColumns(object):
         assert "chai" in pipeline._activeCols
 
     def test_addActiveCols_dataframe(self, pipeline):
-        df = pandas.DataFrame({"key": ["chai", "creme"], "value": ["latte", "brulee"]})
+        df = pandas.DataFrame({"key": ["chai", "creme"],
+                               "value": ["latte", "brulee"]})
         pipeline.addActiveCols(df, backup=False)
         assert "creme" in pipeline._activeCols
         assert "chai" in pipeline._activeCols
@@ -117,4 +119,13 @@ class TestActiveColumns(object):
         pipeline.addActiveCols(df, isMeta=True, backup=False)
         assert "creme" in pipeline._metaActiveCols
         assert "chai" in pipeline._metaActiveCols
+
+
+class TestScopeModification(object):
+    def test_addView(self, syn, entities, project):
+        entity_view = conftest.entity_view(syn, project, entities['folders'][0])
+        p = annotator.Pipeline(syn, view=entity_view.id)
+        p.addView(entities['folders'][1].id)
+        correctScopeIds = [f.id[3:] for f in entities['folders']]
+        assert all([i in correctScopeIds for i in p._entityViewSchema['scopeIds']])
 

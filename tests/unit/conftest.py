@@ -107,20 +107,21 @@ def genericTable(syn, project, sampleFile):
 def entities(syn, sampleFile, project):
     # store a folder for our entities
     sample_folder = folder(syn, project)
+    sample_folder_two = folder(syn, project)
     # store sample files
     _file = file_(syn, sample_folder, SAMPLE_FILE, name="file1.csv")
     _file2 = file_(syn, sample_folder, SAMPLE_FILE, name="file2.csv")
-    _file3 = file_(syn, sample_folder, SAMPLE_FILE, name="file3.csv")
+    _file3 = file_(syn, sample_folder_two, SAMPLE_FILE, name="file3.csv")
     # store a sample metadata file
     meta = synapseclient.File(path=SAMPLE_META, name='meta',
-                              parent=sample_folder)
+                              parent=project)
     meta = syn.store(meta)
     # store a sample table (same values as sample file)
     schema = table(syn, project, sampleFile)
     # store a sample file view
-    entity_view_ = entity_view(syn, project, scopes=sample_folder)
+    entity_view_ = entity_view(syn, project, scopes=project)
     ents = {'files': [_file, _file2, _file3],
-            'folder': sample_folder,
+            'folders': [sample_folder, sample_folder_two],
             'meta': meta,
             'table_schema': schema,
             'entity_view': entity_view_}
