@@ -6,6 +6,20 @@ import pandas as pd
 from . import utils
 
 
+
+def getAnnotationsRelease():
+    """
+
+    Returns
+    -------
+    the latest release version of Sage Bionetworks annotations on github
+    """
+    reqRelease = requests.get("https://api.github.com/repos/Sage-Bionetworks/synapseAnnotations/releases")
+    releaseVersion = reqRelease.json()[0]['tag_name']
+
+    return releaseVersion
+
+
 def moduleJsonPath(releaseVersion=None):
     """ get and load the list of json files from data folder (given the api endpoint url - ref master - latest vesion)
      then construct a dictionary of module names and its associated raw data github url endpoints.
@@ -24,9 +38,7 @@ def moduleJsonPath(releaseVersion=None):
             ... } @kenny++
     """
     if releaseVersion is None:
-        # get the latest release version
-        reqRelease = requests.get("https://api.github.com/repos/Sage-Bionetworks/synapseAnnotations/releases")
-        releaseVersion = reqRelease.json()[0]['tag_name']
+        releaseVersion = getAnnotationsRelease()
 
     gitPath = 'https://api.github.com/repos/Sage-Bionetworks/synapseAnnotations/contents/synapseAnnotations/data/?ref='
     req = requests.get(gitPath + releaseVersion)
