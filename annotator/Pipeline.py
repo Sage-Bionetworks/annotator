@@ -322,7 +322,6 @@ class Pipeline:
         while True:
             regex = self._inputDefault("regex: ", regex)
             newCol = utils.colFromRegex(self.view[dataKey].values, regex)
-
             missingVals = [v not in self._meta[metaKey].values.astype(str)
                            for v in newCol]
             if any(missingVals):
