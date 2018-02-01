@@ -2,7 +2,6 @@ from __future__ import print_function
 import pandas as pd
 import synapseclient as sc
 import readline
-import json
 from . import utils
 from . import schema as schemaModule
 from copy import deepcopy
@@ -44,9 +43,10 @@ class Pipeline:
         """
         self.syn = syn
         self.view = view if view is None else self._parseView(view, sortCols)
-        self._entityViewSchema = self.syn.get(view) if isinstance(view, str) else None
+        self._entityViewSchema = (self.syn.get(view)
+                                  if isinstance(view, str) else None)
         self.schema = (schemaModule.flattenJson(schema)
-                        if isinstance(schema, str) else schema)
+                       if isinstance(schema, str) else schema)
         self._index = self.view.index if isinstance(
                 self.view, pd.DataFrame) else None
         self._activeCols = []
@@ -101,6 +101,38 @@ class Pipeline:
             print(self.view.shape)
         else:
             print("No data view set.")
+
+
+    def drop(self, labels, axis):
+        """ Delete rows or columns from a file view on Synapse.*
+            Rows are only dropped locally. Deleting rows from a
+            file view on Synapse would require deleting the file itself.
+            Columns are dropped both locally and remotely on Synapse.
+
+        Parameters
+        ----------
+        labels : str, list
+            Can either be a str indicating the index (usually formatted
+            ROWID_VERSION) or a list of str.
+            axis : int
+            For a two-dimensional dataframe, 0 indicates rows whereas
+            1 indicates columns.
+
+        Returns
+        -------
+        A list of indices deleted.
+        """
+        labels = [labels] if isinstance(labels, str) else labels
+        if axis == 0:
+            self._index = self._index.drop(labels)
+        elif axis == 1:
+            self._entityViewSchema = utils.dropColumns(
+                    self.syn, self._entityViewSchema, labels)
+            if isinstance(self.schema, pd.DataFrame):
+                self.schema = self.schema[[l not in labels
+                                           for l in self.schema.key]]
+        self.view = self.view.drop(labels, axis=axis)
+
 
     def metaHead(self):
         """ Print head of `self._meta` """
@@ -174,6 +206,32 @@ class Pipeline:
             self._prettyPrintColumns(self._metaActiveColumns, style)
         else:
             print("No active columns.")
+
+
+    def addView(self, scope):
+        """ Add further Folders/Projects to the scope of `self.view`.
+
+        Parameters
+        ----------
+        scope : str, list
+            The Synapse IDs of the entites to add to the scope.
+
+        Returns
+        -------
+        synapseclient.Schema
+        """
+        self._entityViewSchema = utils.addToScope(self.syn,
+                self._entityViewSchema, scope)
+        # Assuming row version/id values stay the same for the before-update
+        # rows, we can carry over values from the old view.
+        oldIndices = self._index
+        oldColumns = self.view.columns
+        newView = utils.synread(self.syn, self._entityViewSchema.id, silent=True)
+        for c in oldColumns:
+            newView.loc[oldIndices,c] = self.view[c].values
+        self.view = newView
+        self._index = self.view.index
+
 
     def addActiveCols(self, activeCols, path=False, isMeta=False, backup=True):
         """ Add column names to `self._activeCols` or `self._metaActiveCols`.
@@ -411,7 +469,7 @@ class Pipeline:
         TypeError if view is not a str, list, or pandas.DataFrame
         """
         if isinstance(view, str):
-            return utils.synread(self.syn, view, sortCols)
+            return utils.synread(self.syn, view, sortCols=sortCols)
         elif isinstance(view, list) and meta:
             return utils.combineSynapseTabulars(self.syn, view, axis=1)
         elif isinstance(view, pd.DataFrame):
@@ -612,11 +670,7 @@ class Pipeline:
         self.backup("createFileView")
 
         # Fetch default keys, plus any preexisting annotation keys
-        if isinstance(scope, str):
-            scope = [scope]
-        params = {'scope': scope, 'viewType': 'file'}
-        cols = self.syn.restPOST('/column/view/scope',
-                                 json.dumps(params))['results']
+        cols = utils.getDefaultColumnsForScope(self.syn, scope)
 
         # Store flattened schema, add keys to active columns list.
         if self.schema is None:
@@ -627,7 +681,7 @@ class Pipeline:
             for k in self.schema.index.unique():
                 self.addActiveCols(k)
             schemaCols = utils.makeColumns(list(self.schema.index.unique()),
-                    asSynapseCols=False)
+                                           asSynapseCols=False)
             cols = self._getUniqueCols(schemaCols, cols)
 
         # Add keys defined during initialization
@@ -638,7 +692,7 @@ class Pipeline:
 
         # Add keys passed to addCols
         if addCols:
-            if isinstance(addCols, dict) and addCols[k] is None:
+            if isinstance(addCols, dict):
                 unspecifiedCols = [k for k in addCols if addCols[k] is None]
                 self.addActiveCols(unspecifiedCols)
             elif isinstance(addCols, list):
@@ -650,7 +704,7 @@ class Pipeline:
         # are added to `self.view` but not yet stored to Synapse.
         cols = [sc.Column(**c) for c in cols]
         entityViewSchema = sc.EntityViewSchema(name=name, columns=cols,
-                                     parent=parent, scopes=scope)
+                                               parent=parent, scopes=scope)
         self._entityViewSchema = self.syn.store(entityViewSchema)
         self.view = utils.synread(self.syn, self._entityViewSchema.id)
         self._index = self.view.index

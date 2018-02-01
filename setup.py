@@ -9,7 +9,9 @@ setup(
     author_email='phil.snyder@sagebase.org',
     license='MIT',
     packages=find_packages(),
-    scripts=['bin/json2synapse.py'],
+    scripts=['bin/json2synapse.py',
+             'bin/create_empty_fileview.py',
+             'bin/sync_manifest.py'],
     install_requires=[
         'pandas',
         'synapseclient'])
