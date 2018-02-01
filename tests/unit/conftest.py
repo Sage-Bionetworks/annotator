@@ -4,11 +4,7 @@ import logging
 import pandas
 import synapseclient
 import uuid
-
-
-SAMPLE_FILE = "../sampleFile.csv"
-SAMPLE_META = "../sampleMeta.csv"
-
+import StringIO
 
 @pytest.fixture(scope='session')
 def syn():
@@ -25,12 +21,17 @@ def read(obj):
 
 @pytest.fixture(scope='session')
 def sampleFile():
-    return read(SAMPLE_FILE)
+    sampleFileText = "favoriteColor,name\nblue,phil\ngreen,tom"
+    f = StringIO.StringIO(sampleFileText)
+    return pandas.read_csv(f, header=0, index_col=None)
 
 
 @pytest.fixture(scope='session')
 def sampleMetadata():
-    return read(SAMPLE_META)
+
+    sampleMetadataText = "id,mexico,serbia,favoriteMeat,favoriteFruit,team\n1,quien,ко,bacon,orange,blue\n2,que,Шта,bacon,banana,blue\n3,donde,где,,,blue"
+    f = StringIO.StringIO(sampleFileText)
+    return pandas.read_csv(f, header=0, index_col=None)
 
 
 @pytest.fixture(scope='session')
