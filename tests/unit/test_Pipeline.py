@@ -129,3 +129,13 @@ class TestScopeModification(object):
         correctScopeIds = [f.id[3:] for f in entities['folders']]
         assert all([i in correctScopeIds for i in p._entityViewSchema['scopeIds']])
 
+class TestDefaultValues(object):
+    def test_addDefaultValues_preexisting_col(self, genericPipeline, sampleFile):
+        genericPipeline.view = sampleFile
+        genericPipeline.addDefaultValues({'favoriteColor': 'purple'}, backup=False)
+        assert all([v == "purple" for v in genericPipeline.view['favoriteColor']])
+
+    def test_addDefaultValues_new_col(self, genericPipeline, sampleFile):
+        genericPipeline.view = sampleFile
+        genericPipeline.addDefaultValues({'favoriteCheese': 'Stinky Bishop'}, backup=False)
+        assert all([v == "Stinky Bishop" for v in genericPipeline.view['favoriteCheese']])
