@@ -149,10 +149,10 @@ class TestFileFormatColumn(object):
     @pytest.fixture
     def sampleView(self):
         return pandas.DataFrame({"name": ["celery_man.gif", "fastq.fastq",
-                                 "unknown", "slim.fastq.gz", "slim.tar.gz"]})
+                                 "unknown", "slim.fastq.gz", "slim.tar.gz", None]})
 
     def test_addFileFormatCol(self, genericPipeline, sampleView):
         genericPipeline.view = sampleView
         genericPipeline.addFileFormatCol()
         assert genericPipeline.view["fileFormat"] == \
-                ["gif", "fastq", None, "fastq", "tar"]
+                ["gif", "fastq", None, "fastq", "tar", None]
