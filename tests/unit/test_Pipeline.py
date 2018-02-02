@@ -123,19 +123,36 @@ class TestActiveColumns(object):
 
 class TestScopeModification(object):
     def test_addView(self, syn, entities, project):
-        entity_view = conftest.entity_view(syn, project, entities['folders'][0])
+        entity_view = conftest.entity_view(syn, project, entities["folders"][0])
         p = annotator.Pipeline(syn, view=entity_view.id)
-        p.addView(entities['folders'][1].id)
-        correctScopeIds = [f.id[3:] for f in entities['folders']]
-        assert all([i in correctScopeIds for i in p._entityViewSchema['scopeIds']])
+        p.addView(entities["folders"][1].id)
+        correctScopeIds = [f.id[3:] for f in entities["folders"]]
+        assert all([i in correctScopeIds
+                    for i in p._entityViewSchema["scopeIds"]])
 
 class TestDefaultValues(object):
     def test_addDefaultValues_preexisting_col(self, genericPipeline, sampleFile):
         genericPipeline.view = sampleFile
-        genericPipeline.addDefaultValues({'favoriteColor': 'purple'}, backup=False)
-        assert all([v == "purple" for v in genericPipeline.view['favoriteColor']])
+        genericPipeline.addDefaultValues(
+                {"favoriteColor": "purple"}, backup=False)
+        assert all([v == "purple"
+                    for v in genericPipeline.view["favoriteColor"]])
 
     def test_addDefaultValues_new_col(self, genericPipeline, sampleFile):
         genericPipeline.view = sampleFile
-        genericPipeline.addDefaultValues({'favoriteCheese': 'Stinky Bishop'}, backup=False)
-        assert all([v == "Stinky Bishop" for v in genericPipeline.view['favoriteCheese']])
+        genericPipeline.addDefaultValues(
+                {"favoriteCheese": "Stinky Bishop"}, backup=False)
+        assert all([v == "Stinky Bishop"
+                    for v in genericPipeline.view["favoriteCheese"]])
+
+class TestFileFormatColumn(object):
+    @pytest.fixture
+    def sampleView(self):
+        return pandas.DataFrame({"name": ["celery_man.gif", "fastq.fastq",
+                                 "unknown", "slim.fastq.gz", "slim.tar.gz"]})
+
+    def test_addFileFormatCol(self, genericPipeline, sampleView):
+        genericPipeline.view = sampleView
+        genericPipeline.addFileFormatCol()
+        assert genericPipeline.view["fileFormat"] == \
+                ["gif", "fastq", None, "fastq", "tar"]
