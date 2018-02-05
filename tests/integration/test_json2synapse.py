@@ -1,3 +1,4 @@
+from future.utils import iteritems
 import pandas
 import synapseclient
 from annotator import schema
@@ -16,7 +17,7 @@ def test_annotation_key_lengths_json_vs_table():
     currentTable = syn.tableQuery("SELECT * FROM %s" % tableSynId)
     currentTable = currentTable.asDataFrame()
 
-    for module, path in names.iteritems():
+    for module, path in iteritems(names):
         table_key_set = set(currentTable[currentTable['module'] == module].key.unique())
         json_record = pandas.read_json(path)
         json_key_set = set(json_record['name'])

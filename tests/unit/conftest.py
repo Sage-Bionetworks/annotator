@@ -6,8 +6,8 @@ import synapseclient
 import uuid
 
 
-SAMPLE_FILE = "https://raw.githubusercontent.com/Sage-Bionetworks/annotator/master/tests/sampleFile.csv"
-SAMPLE_META = "https://raw.githubusercontent.com/Sage-Bionetworks/annotator/master/tests/sampleMeta.csv"
+SAMPLE_FILE = "../sampleFile.csv"
+SAMPLE_META = "../sampleMeta.csv"
 
 
 @pytest.fixture(scope='session')
