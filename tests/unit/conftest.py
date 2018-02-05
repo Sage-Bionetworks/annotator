@@ -1,6 +1,7 @@
 import pytest
 import sys
 import logging
+import tempfile
 import pandas
 import synapseclient
 import uuid
@@ -8,6 +9,8 @@ import uuid
 
 SAMPLE_FILE = "https://raw.githubusercontent.com/Sage-Bionetworks/annotator/master/tests/sampleFile.csv"
 SAMPLE_META = "https://raw.githubusercontent.com/Sage-Bionetworks/annotator/master/tests/sampleMeta.csv"
+SAMPLE_FILE_LOCAL_PATH = None
+SAMPLE_META_LOCAL_PATH = None
 
 
 @pytest.fixture(scope='session')
@@ -41,11 +44,17 @@ def project(syn):
     syn.delete(project)
 
 
-def file_(syn, parent, path, annotations=None, **kwargs):
-    if 'name' not in kwargs:
-        name = str(uuid.uuid4())
-    else:
-        name = kwargs.pop('name')
+def file_(syn, parent, path=None, annotations=None, **kwargs):
+    global SAMPLE_FILE_LOCAL_PATH
+    if path is None:
+        if SAMPLE_FILE_LOCAL_PATH is not None:
+            path = SAMPLE_FILE_LOCAL_PATH
+        else:
+            path = tempfile.mkstemp()[1]
+            df = sampleFile()
+            df.to_csv(path, index=False, header=True)
+            SAMPLE_FILE_LOCAL_PATH = path
+    name = str(uuid.uuid4()) if 'name' not in kwargs else kwargs.pop('name')
     file_ = synapseclient.File(path=path, name=name,
                                parent=parent, **kwargs)
     if annotations:
@@ -58,7 +67,7 @@ def file_(syn, parent, path, annotations=None, **kwargs):
 
 @pytest.fixture
 def genericFile(syn, project):
-    return _file(syn, project, path)
+    return _file(syn, project)
 
 
 def folder(syn, parent):
@@ -107,13 +116,11 @@ def entities(syn, sampleFile, project):
     # store a folder for our entities
     sample_folder = folder(syn, project)
     # store sample files
-    _file = file_(syn, sample_folder, SAMPLE_FILE, name="file1.csv")
-    _file2 = file_(syn, sample_folder, SAMPLE_FILE, name="file2.csv")
-    _file3 = file_(syn, sample_folder, SAMPLE_FILE, name="file3.csv")
+    _file = file_(syn, sample_folder, name="file1.csv")
+    _file2 = file_(syn, sample_folder, name="file2.csv")
+    _file3 = file_(syn, sample_folder, name="file3.csv")
     # store a sample metadata file
-    meta = synapseclient.File(path=SAMPLE_META, name='meta',
-                              parent=sample_folder)
-    meta = syn.store(meta)
+    meta = file_(syn, sample_folder, name='meta.csv')
     # store a sample table (same values as sample file)
     schema = table(syn, project, sampleFile)
     # store a sample file view
