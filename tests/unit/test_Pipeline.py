@@ -156,3 +156,26 @@ class TestFileFormatColumn(object):
         genericPipeline.addFileFormatCol()
         assert genericPipeline.view["fileFormat"] == \
                 ["gif", "fastq", None, "fastq", "tar", None]
+
+class TestLinks(object):
+    @pytest.fixture
+    def pipeline(self, genericPipeline, genericEntityView, sampleMetadata):
+        genericPipeline.view = genericEntityView
+        genericPipeline._meta = sampleMetadata
+        return genericPipeline
+
+    def test_addLinks(self, pipeline):
+        links = {'name': 'mexico', 'createdBy': 'serbia'}
+        pipeline.addLinks(links=links, append=False, backup=False)
+        assert pipeline.links == links
+        links2 = {'name': 'mexico'}
+        pipeline.addLinks(links=links2, append=False, backup=False)
+        assert pipeline.links == links2
+        links3 = {'createdBy': 'serbia'}
+        pipeline.addLinks(links=links3, append=True, backup=False)
+        assert pipeline.links == links
+        with pytest.raises(TypeError):
+            pipeline.addLinks(links="hello", append=False, backup=False)
+        with pytest.raises(AttributeError):
+            pipeline.view = None
+            pipeline.addLinks()
