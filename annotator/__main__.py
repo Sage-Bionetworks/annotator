@@ -40,7 +40,6 @@ def updateTable(tableSynId, newTable, releaseVersion):
     :param releaseVersion:
     :return:
     """
-
     currentTable = syn.tableQuery("SELECT * FROM %s" % tableSynId)
 
     # If current table has rows, delete all the rows
@@ -65,7 +64,6 @@ def meltjson(args, syn):
     normalize the json files per module and create a melted data frame by concatenating all the modules data.
     then upload the melted data frame to the synapse table by completely deleting all rows then replacing content.
     This process also updates the synapse table annotations with the latest release version.
-
 
     :param args:
     :param syn:
@@ -141,7 +139,6 @@ def _annotator_error_msg(ex):
 
 def performMain(args, syn):
     """
-
 
     :param args:
     :param syn:
