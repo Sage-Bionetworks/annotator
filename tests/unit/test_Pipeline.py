@@ -180,3 +180,22 @@ class TestLinks(object):
         with pytest.raises(AttributeError):
             pipeline.view = None
             pipeline.addLinks()
+
+
+class TestKey(object):
+    @pytest.fixture(scope='class')
+    def pipeline(self, genericPipeline, sampleFile, sampleMetadata):
+        genericPipeline.view = sampleFile
+        genericPipeline._meta = sampleMetadata
+        return genericPipeline
+
+    def test_isValidKeyPair(self, pipeline):
+        # no overlap
+        assert not pipeline.isValidKeyPair("name", "mexico")
+        # complete overlap (view is subset of meta)
+        pipeline.view["mexico_view"] = list(
+                pipeline._meta["mexico"][:len(pipeline.view)])
+        assert pipeline.isValidKeyPair("mexico_view", "mexico")
+        # partial overlap
+        pipeline.view.loc[0, 'mexico_view'] = None
+        assert not pipeline.isValidKeyPair("mexico_view", "mexico")
