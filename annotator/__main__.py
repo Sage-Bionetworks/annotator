@@ -28,6 +28,33 @@ def synapseLogin():
     return syn
 
 
+def updateTable(tableSynId, newTable, releaseVersion):
+    """
+    Gets the current annotation table, deletes all it's rows, then updates the table with new content generated
+    from all the json files on synapseAnnotations. In the process also updates the table annotation to the latest
+    releaseversion.
+
+    :param tableSynId:
+    :param newTable:
+    :param releaseVersion:
+    :return:
+    """
+
+    currentTable = syn.tableQuery("SELECT * FROM %s" % tableSynId)
+
+    # If current table has rows, delete all the rows
+    if currentTable.asRowSet().rows:
+        deletedRows = syn.delete(currentTable.asRowSet())
+
+    # get table schema and set it's release version annotation
+    tableSchema = syn.get(tableSynId)
+    tableSchema.annotations = {"annotationReleaseVersion": str(releaseVersion)}
+    updated_schema_release = syn.store(tableSchema)
+
+    # store the new table on synapse
+    table = syn.store(synapseclient.Table(tableSchema, newTable))
+
+
 def buildParser():
     """
 
