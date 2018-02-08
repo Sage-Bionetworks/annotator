@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+from future.utils import iteritems
 import argparse
 import getpass
 import pandas
@@ -55,6 +56,54 @@ def updateTable(tableSynId, newTable, releaseVersion):
     table = syn.store(synapseclient.Table(tableSchema, newTable))
 
 
+def meltjson(args, syn):
+    """
+    Given a synapse table id with the schema
+    annotation_schema = ["key", "description", "columnType", "maximumSize", "value", "valueDescription",
+                         "source", "module"]
+    get the most updated release version annotations json files from github Sage-Bionetworks/synapseAnnotations
+    normalize the json files per module and create a melted data frame by concatenating all the modules data.
+    then upload the melted data frame to the synapse table by completely deleting all rows then replacing content.
+    This process also updates the synapse table annotations with the latest release version.
+
+
+    :param args:
+    :param syn:
+    :return:
+    """
+
+    if args.tableId is not None:
+        tableSynId = args.tableId
+    else:
+        tableSynId = "syn10242922"
+
+    if args.releaseVersion is not None:
+        releaseVersion = args.releaseVersion
+    else:
+        releaseVersion = schema.getAnnotationsRelease()
+
+    all_modules = []
+    key = ["key", "value", "module"]
+    annotation_schema = ["key", "description", "columnType", "maximumSize", "value", "valueDescription",
+                         "source", "module"]
+
+    names = schema.moduleJsonPath(releaseVersion)
+
+    for module, path in iteritems(names):
+        module_df = schema.flattenJson(path, module)
+        all_modules.append(module_df)
+
+    # concat the list of all normalized dataframes into one annotation dataframe
+    all_modules_df = pandas.concat(all_modules)
+
+    # re-arrange columns/fields and sort data.
+    all_modules_df = all_modules_df[annotation_schema]
+    all_modules_df.sort_values(key, ascending=[True, True, True], inplace=True)
+    all_modules_df.valueDescription = all_modules_df.valueDescription.str.encode('utf-8')
+
+    updateTable(tableSynId=tableSynId, newTable=all_modules_df, releaseVersion=releaseVersion)
+
+
 def buildParser():
     """
 
@@ -72,7 +121,7 @@ def buildParser():
                                  type=str)
     parser_meltjson.add_argument('--releaseVersion', help='Sage-Bionetworks/synapseAnnotations release version tag name',
                                  required=False, type=str)
-    parser_meltjson.set_defaults(func=parser_meltjso)
+    parser_meltjson.set_defaults(func=parser_meltjson)
 
     return parser
 
