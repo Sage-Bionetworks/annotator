@@ -154,8 +154,9 @@ class TestFileFormatColumn(object):
     def test_addFileFormatCol(self, genericPipeline, sampleView):
         genericPipeline.view = sampleView
         genericPipeline.addFileFormatCol()
-        assert genericPipeline.view["fileFormat"] == \
-                ["gif", "fastq", None, "fastq", "tar", None]
+        assert all([i == j for i, j in
+                    zip(genericPipeline.view["fileFormat"],
+                        ["gif", "fastq", None, "fastq", "tar", None])])
 
 class TestLinks(object):
     @pytest.fixture
