@@ -199,3 +199,14 @@ class TestKey(object):
         # partial overlap
         pipeline.view.loc[0, 'mexico_view'] = None
         assert not pipeline.isValidKeyPair("mexico_view", "mexico")
+
+class TestMisc(object):
+    @pytest.fixture(scope='class')
+    def pipeline(self, genericPipeline, sampleFile):
+        genericPipeline.view = sampleFile
+        return genericPipeline
+
+    def test_substituteColumnValues(self, pipeline):
+        pipeline.substituteColumnValues(
+                "name", {"phil": "Phillip", "tom": "Tomothy"})
+        assert pipeline.view["name"].values == ["Phillip", "Tomothy"]
