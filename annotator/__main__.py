@@ -28,3 +28,26 @@ def synapseLogin():
     return syn
 
 
+def buildParser():
+    """
+
+    :return:
+    """
+    parser = argparse.ArgumentParser()
+
+    subparsers = parser.add_subparsers(title='commands',
+                                       description='The following commands are available:',
+                                       help='For additional help: "annotator <COMMAND> -h"')
+
+    parser_meltjson = subparsers.add_parser('meltjson', help='Creates a flattened synapse table from json files '
+                                                             'located on Sage-Bionetworks/synapseAnnotations/data.')
+
+    parser_meltjson.add_argument('--tableId', help='A table synapse id containing the annotations', required=False,
+                                 type=str)
+    parser_meltjson.add_argument('--releaseVersion', help='Sage-Bionetworks/synapseAnnotations release version tag name',
+                                 required=False, type=str)
+    parser_meltjson.set_defaults(func=parser_meltjso)
+
+    return parser
+
+
