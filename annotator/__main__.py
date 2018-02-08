@@ -41,7 +41,6 @@ def buildParser():
 
     parser_meltjson = subparsers.add_parser('meltjson', help='Creates a flattened synapse table from json files '
                                                              'located on Sage-Bionetworks/synapseAnnotations/data.')
-
     parser_meltjson.add_argument('--tableId', help='A table synapse id containing the annotations', required=False,
                                  type=str)
     parser_meltjson.add_argument('--releaseVersion', help='Sage-Bionetworks/synapseAnnotations release version tag name',
@@ -51,3 +50,43 @@ def buildParser():
     return parser
 
 
+def _annotator_error_msg(ex):
+    """
+    Format a human readable error message
+
+    :param ex:
+    :return:
+    """
+    if isinstance(ex, six.string_types):
+        return ex
+
+    return '\n' + ex.__class__.__name__ + ': ' + str(ex) + '\n\n'
+
+
+def performMain(args, syn):
+    """
+
+
+    :param args:
+    :param syn:
+    :return:
+    """
+    if 'func' in args:
+        try:
+            args.func(args, syn)
+        except Exception as ex:
+            if args.debug:
+                raise
+            else:
+                sys.stderr.write(_csbc_error_msg(ex))
+
+
+def main():
+    args = buildParser().parse_args()
+    syn = synapseLogin()
+
+    performMain(args, syn)
+
+
+if __name__ == "__main__":
+    main()
