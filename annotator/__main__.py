@@ -29,12 +29,13 @@ def synapseLogin():
     return syn
 
 
-def updateTable(tableSynId, newTable, releaseVersion):
+def updateTable(syn, tableSynId, newTable, releaseVersion):
     """
     Gets the current annotation table, deletes all it's rows, then updates the table with new content generated
     from all the json files on synapseAnnotations. In the process also updates the table annotation to the latest
     releaseversion.
 
+    :param syn:
     :param tableSynId:
     :param newTable:
     :param releaseVersion:
@@ -99,7 +100,7 @@ def meltjson(args, syn):
     all_modules_df.sort_values(key, ascending=[True, True, True], inplace=True)
     all_modules_df.valueDescription = all_modules_df.valueDescription.str.encode('utf-8')
 
-    updateTable(tableSynId=tableSynId, newTable=all_modules_df, releaseVersion=releaseVersion)
+    updateTable(syn, tableSynId=tableSynId, newTable=all_modules_df, releaseVersion=releaseVersion)
 
 
 def buildParser():
@@ -119,7 +120,7 @@ def buildParser():
                                  type=str)
     parser_meltjson.add_argument('--releaseVersion', help='Sage-Bionetworks/synapseAnnotations release version tag name',
                                  required=False, type=str)
-    parser_meltjson.set_defaults(func=parser_meltjson)
+    parser_meltjson.set_defaults(func=meltjson)
 
     return parser
 
@@ -151,7 +152,7 @@ def performMain(args, syn):
             if args.debug:
                 raise
             else:
-                sys.stderr.write(_csbc_error_msg(ex))
+                sys.stderr.write(_annotator_error_msg(ex))
 
 
 def main():
