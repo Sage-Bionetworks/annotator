@@ -45,24 +45,29 @@ class TestViewParsing(object):
         assert isinstance(view, pandas.DataFrame)
         assert list(sorted(sampleFile.columns)) == list(view.columns)
 
+
 class TestConfirmationPrompt(object):
     def test_getUserConfirmation_yes(self, genericPipeline, monkeypatch):
         inputs = ['yes', 'y', 'YeS']
-        monkeypatch.setattr('builtins.input', lambda _: next((i for i in inputs)))
+        monkeypatch.setattr('builtins.input',
+                            lambda _: next((i for i in inputs)))
         for i in inputs:
             assert genericPipeline._getUserConfirmation()
 
     def test_getUserConfirmation_no(self, genericPipeline, monkeypatch):
         inputs = ['no', 'n', 'NO thank you']
-        monkeypatch.setattr('builtins.input', lambda _: next((i for i in inputs)))
+        monkeypatch.setattr('builtins.input',
+                            lambda _: next((i for i in inputs)))
         for i in inputs:
             assert not genericPipeline._getUserConfirmation()
 
     def test_getUserConfirmation_unknown(self, genericPipeline, monkeypatch):
         inputs = ['wut', '#$%!#$%', 'Show me what u got']
-        monkeypatch.setattr('builtins.input', lambda _: next((i for i in inputs)))
+        monkeypatch.setattr('builtins.input',
+                            lambda _: next((i for i in inputs)))
         for i in inputs:
             assert not genericPipeline._getUserConfirmation()
+
 
 class TestActiveColumns(object):
     @pytest.fixture
@@ -88,7 +93,8 @@ class TestActiveColumns(object):
         assert pipeline._activeCols == ["pizza", "pie", "sunday", "funday"]
 
     def test_addActiveCols_dict(self, pipeline):
-        pipeline.addActiveCols({"creme": "brulee", "chai": "latte"}, backup=False)
+        pipeline.addActiveCols(
+                {"creme": "brulee", "chai": "latte"}, backup=False)
         assert "creme" in pipeline._activeCols
         assert "chai" in pipeline._activeCols
 
@@ -109,7 +115,7 @@ class TestActiveColumns(object):
 
     def test_addActiveCols_dict_meta(self, pipeline):
         pipeline.addActiveCols({"creme": "brulee", "chai": "latte"},
-                isMeta=True, backup=False)
+                               isMeta=True, backup=False)
         assert "creme" in pipeline._metaActiveCols
         assert "chai" in pipeline._metaActiveCols
 
@@ -120,15 +126,26 @@ class TestActiveColumns(object):
         assert "creme" in pipeline._metaActiveCols
         assert "chai" in pipeline._metaActiveCols
 
+    def test_removeActiveCols_str(self, pipeline):
+        pipeline.removeActiveCols("pizza", backup=False)
+        assert "pizza" not in pipeline._activeCols
+
+    def test_removeActiveCols_list(self, pipeline):
+        pipeline.removeActiveCols(["pizza", "pie"], backup=False)
+        assert ("pizza" not in pipeline._activeCols and
+                "pie" not in pipeline._activeCols)
+
 
 class TestScopeModification(object):
     def test_addView(self, syn, entities, project):
-        entity_view = conftest.entity_view(syn, project, entities["folders"][0])
+        entity_view = conftest.entity_view(
+                syn, project, entities["folders"][0])
         p = annotator.Pipeline(syn, view=entity_view.id)
         p.addView(entities["folders"][1].id)
         correctScopeIds = [f.id[3:] for f in entities["folders"]]
         assert all([i in correctScopeIds
                     for i in p._entityViewSchema["scopeIds"]])
+
 
 class TestDefaultValues(object):
     def test_addDefaultValues_preexisting_col(self, genericPipeline, sampleFile):
@@ -145,11 +162,13 @@ class TestDefaultValues(object):
         assert all([v == "Stinky Bishop"
                     for v in genericPipeline.view["favoriteCheese"]])
 
+
 class TestFileFormatColumn(object):
     @pytest.fixture
     def sampleView(self):
-        return pandas.DataFrame({"name": ["celery_man.gif", "fastq.fastq",
-                                 "unknown", "slim.fastq.gz", "slim.tar.gz", None]})
+        return pandas.DataFrame(
+                {"name": ["celery_man.gif", "fastq.fastq", "unknown",
+                          "slim.fastq.gz", "slim.tar.gz", None]})
 
     def test_addFileFormatCol(self, genericPipeline, sampleView):
         genericPipeline.view = sampleView
@@ -157,6 +176,7 @@ class TestFileFormatColumn(object):
         assert all([i == j for i, j in
                     zip(genericPipeline.view["fileFormat"],
                         ["gif", "fastq", None, "fastq", "tar", None])])
+
 
 class TestLinks(object):
     @pytest.fixture
@@ -199,6 +219,7 @@ class TestKey(object):
         # partial overlap
         pipeline.view.loc[0, 'mexico_view'] = None
         assert not pipeline.isValidKeyPair("mexico_view", "mexico")
+
 
 class TestMisc(object):
     @pytest.fixture(scope='class')
