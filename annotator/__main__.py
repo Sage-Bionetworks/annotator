@@ -14,10 +14,6 @@ import pandas
 import synapseclient
 from synapseclient import Entity, Project, Column, Team, Wiki
 from annotator import schema
-from future.standard_library import hooks
-with hooks():
-    from urllib.parse import urlparse
-    from urllib.parse import urljoin
 
 
 def synapseLogin():
@@ -113,23 +109,7 @@ def meltjson(args, syn):
     updateTable(syn, tableSynId=tableSynId, newTable=all_modules_df, releaseVersion=releaseVersion)
 
 
-def path2url(path):
-    """
-    Convert path to URL, even if it already is a URL.
-
-    :param path:
-    :return:
-    """
-
-    if path.startswith("/"):
-        new_path = urljoin('file:', urllib.pathname2url(os.path.abspath(path)))
-    else:
-        new_path = path
-
-    return new_path
-
-
-def createColumnsFromJson(json_file, defaultMaximumSize=250):
+def createColumnsFromJson(path, defaultMaximumSize=250):
     """
     Create a list of Synapse Table Columns from a Synapse annotations JSON file.
     This creates a list of columns; if the column is a 'STRING' and
@@ -140,12 +120,10 @@ def createColumnsFromJson(json_file, defaultMaximumSize=250):
     :param defaultMaximumSize:
     :return:
     """
-
-    f = urllib.urlopen(path2url(json_file))
-    data = json.load(f)
+    with open(path) as json_file:
+        data = json.load(json_file)
 
     cols = []
-
     for d in data:
         d['enumValues'] = [a['value'] for a in d['enumValues']]
 
@@ -153,27 +131,22 @@ def createColumnsFromJson(json_file, defaultMaximumSize=250):
             d['maximumSize'] = defaultMaximumSize
 
         cols.append(synapseclient.Column(**d))
-
+        
     return cols
 
 
-def emptyview(args, syn):
+def emptyView(args, syn):
     """
 
     :param args:
     :param syn:
     :return:
     """
-
     project_id = args.id
     scopes = args.scopes
     json_files = args.json
     view_name = args.name
-
-    if args.add_default_columns:
-        default_columns = args.add_default_columns
-    else:
-        default_columns = False
+    default_columns = args.add_default_columns
 
     if args.viewType:
         viewType = args.viewType
@@ -189,8 +162,8 @@ def emptyview(args, syn):
 
     # create schema and print the saved schema
     view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
-                                                    addDefaultViewColumns=default_columns, addAnnotationColumns=True,
-                                                    view_type=viewType))
+                                                     addDefaultViewColumns=default_columns, addAnnotationColumns=True,
+                                                     view_type=viewType))
     print(view)
 
 
@@ -214,22 +187,23 @@ def buildParser():
                                  required=False, type=str)
     parser_meltjson.set_defaults(func=meltjson)
 
-    parser_emptyview = subparsers.add_parser('emptyview', help='Creates an empty synapse view with scopes')
+    parser_emptyview = subparsers.add_parser('emptyview', help='Given synapse scopes, creates empty project/file view '
+                                                               'schema to be annotated')
 
     parser_emptyview.add_argument('--id', help='Synapse id of the project in which to create project/file view',
                                   required=True)
-    parser_emptyview.add_argument('-n', '--name', help='Name of the project/file view to be created', required=True)
-    parser_emptyview.add_argument('-s', '--scopes', nargs='+',
-                                  help='one to many synapse folder or project ids that the file view should include.',
+    parser_emptyview.add_argument('--name', help='Name of the project/file view to be created', required=True)
+    parser_emptyview.add_argument('--scopes', nargs='+',
+                                  help='One to many synapse folder or project ids that the file view should include.',
                                   required=True)
     parser_emptyview.add_argument('--add_default_columns', action='store_true',
                                   help='Add default columns to file view.', required=False)
     parser_emptyview.add_argument('--json', nargs='+',
                                   help='One or more json files to use to define the project/file view schema.',
                                   required=True)
-    parser_emptyview.add_argument('--viewType', required=False,
-                                  help='Type of scopes to be organized are project or file. default is set to be file')
-    parser_emptyview.set_defaults(func=emptyview)
+    parser_emptyview.add_argument('--viewType', help='Type of scopes to be organized are project or file. default is '
+                                                     'set to be file', required=False)
+    parser_emptyview.set_defaults(func=emptyView)
 
     return parser
 
@@ -266,6 +240,7 @@ def performMain(args, syn):
 
 def main():
     args = buildParser().parse_args()
+    print(args)
     syn = synapseLogin()
 
     performMain(args, syn)
