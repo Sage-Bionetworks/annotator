@@ -156,6 +156,42 @@ def createColumnsFromJson(json_file, defaultMaximumSize=250):
     return cols
 
 
+def emptyview(args, syn):
+    """
+
+    :param args:
+    :param syn:
+    :return:
+    """
+    project_id = args.id
+    scopes = args.scopes
+    json_files = args.json
+    view_name = args.name
+
+    if args.add_default_columns:
+        default_columns = args.add_default_columns
+    else:
+        default_columns = False
+
+    if args.viewType:
+        viewType = args.viewType
+    else:
+        viewType = 'file'
+
+    if ',' in scopes:
+        scopes = scopes.split(',')
+
+    # create synapse columns from annotations json file
+    cols = []
+    [cols.extend(createColumnsFromJson(j)) for j in json_files]
+
+    # create schema and print the saved schema
+    view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
+                                                    addDefaultViewColumns=default_columns, addAnnotationColumns=True,
+                                                    view_type=viewType))
+    print(view)
+
+
 def buildParser():
     """
 
