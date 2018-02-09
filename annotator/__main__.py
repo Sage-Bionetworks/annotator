@@ -131,7 +131,7 @@ def createColumnsFromJson(path, defaultMaximumSize=250):
             d['maximumSize'] = defaultMaximumSize
 
         cols.append(synapseclient.Column(**d))
-        
+
     return cols
 
 
