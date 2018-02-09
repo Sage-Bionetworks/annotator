@@ -120,23 +120,29 @@ def create(file_list, key_list, synapse_dir, local_root, depth, tab):
         result.to_csv(sys.stdout, sep="\t", index=False)
     else:
         result.to_csv('annotations_manifest.csv', sep=",", index=False)
-        sys.stderr.write('Manifest has been created. \n')
+        sys.stderr.write('Manifest has been created.\n')
 
 
 def main():
     import argparse
     syn = synapseclient.login(silent=True)
 
-    parser = argparse.ArgumentParser(description="Create Synapse sync manifest")
-    parser.add_argument('-d', '--directory', help='local directory')
-    parser.add_argument('--id', help='Synapse ID of the project/folder')
+    parser = argparse.ArgumentParser(description="Creates a manifest (filepath by annotations) designed for the input "
+                                                 "of synapse sync function to facilitate file organization and "
+                                                 "annotations of those files on synapse.")
+    parser.add_argument('-d', '--directory', help='local directory with files and folders hierarchy to be mirrored on '
+                                                  'synapse.', required=True)
+    parser.add_argument('--id', help='Project/folder synapse id that will mirror the file organization hierarchy. '
+                                     'This information would be placed in manifest parent column and would be used to '
+                                     'allocate the parent directory on synapse after sync function has been run.',
+                        required=True)
     parser.add_argument('-f', '--files',
-                        help='Path(s) to JSON file(s) of annotations (optional)',
-                        nargs='+')
-    parser.add_argument('-n', '--n', help='depth of hierarchy (default: %{default})',
-                        default=None)
-    parser.add_argument('--tab', action='store_true', help='tab delaminated manifest will be into standard output for '
-                                                           'piping')
+                        help='Path(s) to JSON file(s) of annotations (optional)', nargs='+', required=False)
+    parser.add_argument('-n', '--n', help='Depth of hierarchy (default: %{default}) or number of nested folders to '
+                                          'mirror. Any file/folder beyond this number would be expanded into the '
+                                          'hierarchy number indicated.', default=None, required=False)
+    parser.add_argument('--tab', action='store_true', help='tab delaminated manifest will be echoed into standard '
+                                                           'output for piping', required=False)
 
     args = parser.parse_args()
 
