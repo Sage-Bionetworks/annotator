@@ -5,10 +5,9 @@ Create Synapse sync manifest
 import os
 import sys
 import json
-import urlparse
-import urllib
+from six.moves.urllib.parse import urlparse
+from six.moves.urllib.request import urlopen
 import pandas
-
 import synapseclient
 import synapseutils
 
@@ -63,8 +62,8 @@ def _getAnnotationKey(dirs):
 
     if dirs is not None:
         for directory in dirs:
-            if urlparse.urlparse(directory).scheme != '':
-                jfile = urllib.urlopen(directory)
+            if urlparse(directory).scheme != '':
+                jfile = urlopen(directory)
             else:
                 jfile = open(directory, 'r')
 
