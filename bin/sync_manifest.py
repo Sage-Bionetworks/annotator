@@ -1,24 +1,22 @@
 #!/usr/bin/env python
-
-'''Create Synapse sync manifest
-
-   In tab delimited format
-
-'''
-
+"""
+Create Synapse sync manifest
+"""
 import os
 import sys
 import json
 import urlparse
 import urllib
-import pandas as pd
+import pandas
 
 import synapseclient
 import synapseutils
 
-# walk through local directory
-# get a list of dirs and a list of files
+
 def _getLists(local_root, depth):
+    # walk through local directory
+    # get a list of dirs and a list of files
+
     dir_list = []
     file_list = []
 
@@ -36,10 +34,12 @@ def _getLists(local_root, depth):
                 file_list.append(os.path.join(dirpath, name))
     return dir_list, file_list
 
-# walk through Synapse
-# update folders in Synapse to match the local dir
-# get key-value pairs of dirname and synapse id
+
 def _getSynapseDir(syn, synapse_id, local_root, dir_list):
+    # walk through Synapse
+    # update folders in Synapse to match the local dir
+    # get key-value pairs of dirname and synapse id
+
     synapse_dir = {}
 
     synapse_root = syn.get(synapse_id)
@@ -56,24 +56,31 @@ def _getSynapseDir(syn, synapse_id, local_root, dir_list):
             synapse_dir[directory] = new_folder.id
     return synapse_dir
 
-# get a list of annotation keys
+
 def _getAnnotationKey(dirs):
+    # get a list of annotation keys
     key_list = ['used', 'executed']
+
     if dirs is not None:
         for directory in dirs:
             if urlparse.urlparse(directory).scheme != '':
                 jfile = urllib.urlopen(directory)
             else:
                 jfile = open(directory, 'r')
+
             base, ext = os.path.splitext(os.path.basename(directory))
+
             if ext == '.json':
                 data = json.load(jfile)
             else:
                 sys.stderr.write('File %s cannot be parsed. JSON format is required.\n' % directory)
-            data = pd.DataFrame(data)
+
+            data = pandas.DataFrame(data)
             annotation_key = data['name']
             key_list = key_list + list(annotation_key)
+
     return key_list
+
 
 def _getName(path, synapse_dir, local_root, depth):
     path_no_root = path[len(os.path.abspath(local_root)):]
@@ -91,9 +98,11 @@ def _getName(path, synapse_dir, local_root, depth):
         parent = synapse_dir[os.path.dirname(path)]
     return name, parent
 
-# create manifest
-def create(file_list, key_list, synapse_dir, local_root, depth):
-    result = pd.DataFrame()
+
+def create(file_list, key_list, synapse_dir, local_root, depth, tab):
+    # create manifest
+
+    result = pandas.DataFrame()
     result['path'] = file_list
     result['name'] = ""
     result['parent'] = ""
@@ -103,12 +112,17 @@ def create(file_list, key_list, synapse_dir, local_root, depth):
 
     cols = list(result.columns)
 
-    result = pd.concat([result, pd.DataFrame(columns=key_list)])
-    result = result[cols + key_list] # reorder the columns
+    result = pandas.concat([result, pandas.DataFrame(columns=key_list)])
+    # reorder the columns
+    result = result[cols + key_list]
 
-    result.to_csv(sys.stdout, sep="\t", index=False)
+    if tab:
+        # cat the tab delaminated manifest into sys.stdout for piping
+        result.to_csv(sys.stdout, sep="\t", index=False)
+    else:
+        result.to_csv('annotations_manifest.csv', sep=",", index=False)
+        sys.stderr.write('Manifest has been created. \n')
 
-    sys.stderr.write('Manifest has been created.')
 
 def main():
     import argparse
@@ -122,6 +136,8 @@ def main():
                         nargs='+')
     parser.add_argument('-n', '--n', help='depth of hierarchy (default: %{default})',
                         default=None)
+    parser.add_argument('--tab', action='store_true', help='tab delaminated manifest will be into standard output for '
+                                                           'piping')
 
     args = parser.parse_args()
 
@@ -130,6 +146,7 @@ def main():
     synapse_id = args.id
     annotations = args.files
     depth = args.n
+    tab = args.tab
 
     if depth is not None:
         depth = int(depth)
@@ -139,7 +156,7 @@ def main():
     synapse_dir = _getSynapseDir(syn, synapse_id, local_root, dir_list)
     key_list = _getAnnotationKey(annotations)
 
-    create(file_list, key_list, synapse_dir, local_root, depth)
+    create(file_list, key_list, synapse_dir, local_root, depth, tab)
 
 if __name__ == '__main__':
     main()
