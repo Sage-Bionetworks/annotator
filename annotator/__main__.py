@@ -3,6 +3,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 from future.utils import iteritems
+from six.moves.urllib.parse import urlparse
+from six.moves.urllib.request import urlopen
 import os
 import sys
 import json
@@ -204,6 +206,27 @@ def buildParser():
     parser_emptyview.add_argument('--viewType', help='Type of scopes to be organized are project or file. default is '
                                                      'set to be file', required=False)
     parser_emptyview.set_defaults(func=emptyView)
+
+    parser_syncmanifest = subparsers.add_parser('sync_manifest', help='Creates a manifest (filepath by annotations) '
+                                                                      'designed for the input of synapse sync '
+                                                                      'function to facilitate file organization and '
+                                                                      'annotations of those files on synapse.')
+    parser_syncmanifest.add_argument('-d', '--directory', help='local directory with files and folders hierarchy to '
+                                                               'be mirrored on synapse.', required=True)
+    parser_syncmanifest.add_argument('--id', help='Project/folder synapse id that will mirror the file organization '
+                                                  'hierarchy. This information would be placed in manifest parent '
+                                                  'column and would be used to allocate the parent directory on '
+                                                  'synapse after sync function has been run.',
+                        required=True)
+    parser_syncmanifest.add_argument('-f', '--files',
+                        help='Path(s) to JSON file(s) of annotations (optional)', nargs='+', required=False)
+    parser_syncmanifest.add_argument('-n', '--n', help='Depth of hierarchy (default: %{default}) or number of nested '
+                                                       'folders to mirror. Any file/folder beyond this number would '
+                                                       'be expanded into the hierarchy number indicated.',
+                                     default=None, required=False)
+    parser_syncmanifest.add_argument('--tab', action='store_true', help='tab delaminated manifest will be echoed into '
+                                                                        'standard output for piping', required=False)
+    parser_syncmanifest.set_defaults(func=sync_manifest)
 
     return parser
 
