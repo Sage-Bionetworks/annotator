@@ -3,11 +3,20 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 from future.utils import iteritems
+import os
+import sys
+import json
+import urllib
+import six
 import argparse
 import getpass
 import pandas
 import synapseclient
 from annotator import schema
+from future.standard_library import hooks
+with hooks():
+    from urllib.parse import urlparse
+    from urllib.parse import urljoin
 
 
 def synapseLogin():
@@ -101,6 +110,49 @@ def meltjson(args, syn):
     all_modules_df.valueDescription = all_modules_df.valueDescription.str.encode('utf-8')
 
     updateTable(syn, tableSynId=tableSynId, newTable=all_modules_df, releaseVersion=releaseVersion)
+
+
+def path2url(path):
+    """
+    Convert path to URL, even if it already is a URL.
+
+    :param path:
+    :return:
+    """
+
+    if path.startswith("/"):
+        new_path = urljoin('file:', urllib.pathname2url(os.path.abspath(path)))
+    else:
+        new_path = path
+
+    return new_path
+
+
+def createColumnsFromJson(json_file, defaultMaximumSize=250):
+    """
+    Create a list of Synapse Table Columns from a Synapse annotations JSON file.
+    This creates a list of columns; if the column is a 'STRING' and
+    defaultMaximumSize is specified, change the default maximum size for that
+    column.
+
+    :param json_file:
+    :param defaultMaximumSize:
+    :return:
+    """
+    f = urllib.urlopen(path2url(json_file))
+    data = json.load(f)
+
+    cols = []
+
+    for d in data:
+        d['enumValues'] = [a['value'] for a in d['enumValues']]
+
+        if d['columnType'] == 'STRING' and defaultMaximumSize:
+            d['maximumSize'] = defaultMaximumSize
+
+        cols.append(synapseclient.Column(**d))
+
+    return cols
 
 
 def buildParser():
