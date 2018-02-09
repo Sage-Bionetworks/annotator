@@ -12,9 +12,9 @@ import argparse
 import getpass
 import pandas
 import synapseclient
+from synapseclient import Entity, Project, Column, Team, Wiki
 from annotator import schema
 from future.standard_library import hooks
-
 with hooks():
     from urllib.parse import urlparse
     from urllib.parse import urljoin
@@ -140,6 +140,7 @@ def createColumnsFromJson(json_file, defaultMaximumSize=250):
     :param defaultMaximumSize:
     :return:
     """
+
     f = urllib.urlopen(path2url(json_file))
     data = json.load(f)
 
@@ -163,6 +164,7 @@ def emptyview(args, syn):
     :param syn:
     :return:
     """
+
     project_id = args.id
     scopes = args.scopes
     json_files = args.json
@@ -212,8 +214,7 @@ def buildParser():
                                  required=False, type=str)
     parser_meltjson.set_defaults(func=meltjson)
 
-    parser_emptyview = subparsers.add_parser('meltjson', help='Creates a flattened synapse table from json files '
-                                                              'located on Sage-Bionetworks/synapseAnnotations/data.')
+    parser_emptyview = subparsers.add_parser('emptyview', help='Creates an empty synapse view with scopes')
 
     parser_emptyview.add_argument('--id', help='Synapse id of the project in which to create project/file view',
                                   required=True)
