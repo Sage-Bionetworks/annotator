@@ -14,6 +14,7 @@ import pandas
 import synapseclient
 from annotator import schema
 from future.standard_library import hooks
+
 with hooks():
     from urllib.parse import urlparse
     from urllib.parse import urljoin
@@ -170,9 +171,28 @@ def buildParser():
                                                              'located on Sage-Bionetworks/synapseAnnotations/data.')
     parser_meltjson.add_argument('--tableId', help='A table synapse id containing the annotations', required=False,
                                  type=str)
-    parser_meltjson.add_argument('--releaseVersion', help='Sage-Bionetworks/synapseAnnotations release version tag name',
+    parser_meltjson.add_argument('--releaseVersion',
+                                 help='Sage-Bionetworks/synapseAnnotations release version tag name',
                                  required=False, type=str)
     parser_meltjson.set_defaults(func=meltjson)
+
+    parser_emptyview = subparsers.add_parser('meltjson', help='Creates a flattened synapse table from json files '
+                                                              'located on Sage-Bionetworks/synapseAnnotations/data.')
+
+    parser_emptyview.add_argument('--id', help='Synapse id of the project in which to create project/file view',
+                                  required=True)
+    parser_emptyview.add_argument('-n', '--name', help='Name of the project/file view to be created', required=True)
+    parser_emptyview.add_argument('-s', '--scopes', nargs='+',
+                                  help='one to many synapse folder or project ids that the file view should include.',
+                                  required=True)
+    parser_emptyview.add_argument('--add_default_columns', action='store_true',
+                                  help='Add default columns to file view.', required=False)
+    parser_emptyview.add_argument('--json', nargs='+',
+                                  help='One or more json files to use to define the project/file view schema.',
+                                  required=True)
+    parser_emptyview.add_argument('--viewType', required=False,
+                                  help='Type of scopes to be organized are project or file. default is set to be file')
+    parser_emptyview.set_defaults(func=emptyview)
 
     return parser
 
