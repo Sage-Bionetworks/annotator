@@ -3,24 +3,24 @@
 """Create empty file view from a Synapse annotations json file.
 
 """
-
+from future.standard_library import hooks
+with hooks():
+    from urllib.parse import urlparse
+    from urllib.parse import urljoin
 import os
 import sys
 import json
-import urlparse
 import urllib
-
+import six
+import argparse
 import synapseclient
 
 
 def path2url(path):
     """Convert path to URL, even if it already is a URL.
-
     """
-
     if path.startswith("/"):
-        new_path = urlparse.urljoin('file:',
-                                    urllib.pathname2url(os.path.abspath(path)))
+        new_path = urljoin('file:', urllib.pathname2url(os.path.abspath(path)))
     else:
         new_path = path
 
@@ -35,7 +35,6 @@ def createColumnsFromJson(json_file, defaultMaximumSize=250):
     column.
 
     """
-
     f = urllib.urlopen(path2url(json_file))
     data = json.load(f)
 
@@ -53,40 +52,50 @@ def createColumnsFromJson(json_file, defaultMaximumSize=250):
 
 
 def main():
-    import argparse
 
-    parser = argparse.ArgumentParser(description="Create Empty File View")
-    parser.add_argument('--id', help='Synapse ID of project in which to create\
-                                      file view')
-    parser.add_argument('-n', '--name', help='Name of file view')
-    parser.add_argument('-s', '--scopes',
-                        help='A comma-delimited list of Synapse IDs of scopes\
-                              that the file view should include.')
-    parser.add_argument('--add_default_columns', action='store_true',
-                        help='Add default columns to file view.')
-    parser.add_argument('json', nargs='+',
-                        help='One or more json files to use to define the file\
-                              view Schema.')
+    parser = argparse.ArgumentParser(description="Given synapse scopes, creates empty project/file view schema to be "
+                                                 "annotated")
+    parser.add_argument('--id', help='Synapse id of the project in which to create project/file view', required=True)
+    parser.add_argument('-n', '--name', help='Name of the project/file view to be created', required=True)
+    parser.add_argument('-s', '--scopes', nargs='+', help='one to many synapse folder or project ids that the file '
+                                                          'view should include.', required=True)
+    parser.add_argument('--add_default_columns', action='store_true', help='Add default columns to file view.',
+                        required=False)
+    parser.add_argument('--json', nargs='+', help='One or more json files to use to define the project/file view '
+                                                  'schema.', required=True)
+    parser.add_argument('--viewType', required=False,
+                        help='Type of scopes to be organized are project or file. default is set to be file')
 
     args = parser.parse_args()
-
     syn = synapseclient.login(silent=True)
 
     project_id = args.id
     scopes = args.scopes
-    jsons = args.json
+    json_files = args.json
     view_name = args.name
 
-    # get schema from json
+    if args.add_default_columns:
+        default_columns = args.add_default_columns
+    else:
+        default_columns = False
+
+    if args.viewType:
+        viewType = args.viewType
+    else:
+        viewType = 'file'
+
+    if ',' in scopes:
+        scopes = scopes.split(',')
+
+    # create synapse columns from annotations json file
     cols = []
-    [cols.extend(createColumnsFromJson(j)) for j in jsons]
+    [cols.extend(createColumnsFromJson(j)) for j in json_files]
 
-    scopes = scopes.split(',')
-    fv = synapseclient.EntityViewSchema(name=view_name, parent=project_id,
-                                        scopes=scopes, columns=cols,
-                                        add_default_columns=args.add_default_columns)
-
-    syn.store(fv)
+    # create schema and print the saved schema
+    view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
+                                                    addDefaultViewColumns=default_columns, addAnnotationColumns=True,
+                                                    view_type=viewType))
+    print(view)
 
 
 if __name__ == '__main__':
