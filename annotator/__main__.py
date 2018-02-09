@@ -140,6 +140,7 @@ def createColumnsFromJson(path, defaultMaximumSize=250):
 
 def emptyView(args, syn):
     """
+    Given synapse scopes, creates an empty project/file view schema to be annotated.
 
     :param args:
     :param syn:
@@ -322,6 +323,7 @@ def sync_manifest(args, syn):
     """
     Creates a manifest (filepath by annotations) designed for the input of synapse sync
     function to facilitate file organization and annotations of those files on synapse.
+    
     :param args:
     :param syn:
     :return:
@@ -344,6 +346,7 @@ def sync_manifest(args, syn):
 
 def buildParser():
     """
+    Builds the user-input argument parser.
 
     :return:
     """
@@ -404,7 +407,7 @@ def buildParser():
 
 def _annotator_error_msg(ex):
     """
-    Format a human readable error message
+    Formats a human readable error message.
 
     :param ex:
     :return:
@@ -416,12 +419,6 @@ def _annotator_error_msg(ex):
 
 
 def performMain(args, syn):
-    """
-
-    :param args:
-    :param syn:
-    :return:
-    """
     if 'func' in args:
         try:
             args.func(args, syn)
