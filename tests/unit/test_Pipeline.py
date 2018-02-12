@@ -231,3 +231,32 @@ class TestMisc(object):
         pipeline.substituteColumnValues(
                 "name", {"phil": "Phillip", "tom": "Tomothy"})
         assert pipeline.view["name"].values == ["Phillip", "Tomothy"]
+
+
+class TestPublish(object):
+    @pytest.fixture(scope='class')
+    def pipeline(self, genericPipeline, sampleFile):
+        genericPipeline.view = sampleFile
+        return genericPipeline
+
+    def test_publish_no_view_or_schema(self, pipeline, genericPipeline):
+        with pytest.raises(AttributeError):
+            # no view or schema set
+            genericPipeline.publish(validate=False)
+        with pytest.raises(AttributeError):
+            # view set but no schema set
+            pipeline.publish(validate=False)
+
+    def test_publish(self, syn, entities, genericPipeline):
+        q = syn.tableQuery("select * from {}".format(
+            entities['entity_view'].id))
+        genericPipeline.view = q.asDataFrame()
+        genericPipeline._entityViewSchema = entities['entity_view']
+        genericPipeline.view['type'] = 'updatedFile'
+        genericPipeline.publish(validate=False)
+        published_view = syn.tableQuery("select * from {}".format(
+            entities['entity_view'].id)).asDataFrame()
+        pandas.testing.assert_frame_equal(
+                genericPipeline.view,
+                published_view,
+                check_like=True)
