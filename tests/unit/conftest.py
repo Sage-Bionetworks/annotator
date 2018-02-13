@@ -109,7 +109,8 @@ def entities(syn, sampleFile, project):
     sample_folder = folder(syn, project)
     sample_folder_two = folder(syn, project)
     # store sample files
-    _file = file_(syn, sample_folder, SAMPLE_FILE, name="file1.csv")
+    _file = file_(syn, sample_folder, SAMPLE_FILE, name="file1.csv",
+                  annotations={'preexistingAnnotation': 'yes'})
     _file2 = file_(syn, sample_folder, SAMPLE_FILE, name="file2.csv")
     _file3 = file_(syn, sample_folder_two, SAMPLE_FILE, name="file3.csv")
     # store a sample metadata file
@@ -120,12 +121,13 @@ def entities(syn, sampleFile, project):
     schema = table(syn, project, sampleFile)
     # store a sample file view
     entity_view_ = entity_view(syn, project, scopes=project)
-    ents = {'files': [_file, _file2, _file3],
+    entities = {'files': [_file, _file2, _file3],
             'folders': [sample_folder, sample_folder_two],
             'meta': meta,
             'table_schema': schema,
-            'entity_view': entity_view_}
-    return ents
+            'entity_view': entity_view_,
+            'project': project}
+    return entities
 
 @pytest.fixture(scope='session')
 def genericPipeline(syn):

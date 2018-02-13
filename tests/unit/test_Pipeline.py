@@ -260,3 +260,29 @@ class TestPublish(object):
                 genericPipeline.view,
                 published_view,
                 check_like=True)
+
+class TestCreateFileView(object):
+    @pytest.fixture(scope='class')
+    def pipeline(self, genericPipeline, entities):
+        additionalCols = {"coffee": "black", "cheese": None}
+        genericPipeline.createFileView(
+                name="--Test--",
+                parent=entities['project'].id,
+                scope=entities['project'].id,
+                addCols=additionalCols)
+        return genericPipeline
+
+    def test_createFileView(self, pipeline):
+        published_view = syn.tableQuery("select * from {}".format(
+            pipeline._entityViewSchema.id)).asDataFrame()
+        # check default value propogated locally but not globally
+        assert all([v == "black" for v in pipeline.view["coffee"]])
+        assert all([pandas.isnull(v) for v in published_view["coffee"]])
+        # check that columns with unspecified values were created
+        assert "cheese" in pipeline.view
+        assert "cheese" in published_view
+        # check that preexisting annotations were included
+        assert any([pd.notnull(v) for v in
+                    pipeline.view['preexistingAnnotation']])
+        assert any([pd.notnull(v) for v in
+                    published_view['preexistingAnnotation']])
