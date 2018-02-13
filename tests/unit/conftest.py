@@ -42,17 +42,16 @@ def project(syn):
     syn.delete(project)
 
 
-def file_(syn, parent, path, annotations=None, **kwargs):
+def file_(syn, parent, path, **kwargs):
     if 'name' not in kwargs:
         name = str(uuid.uuid4())
     else:
         name = kwargs.pop('name')
-    file_ = synapseclient.File(path=path, name=name,
-                               parent=parent, **kwargs)
-    if annotations:
-        for a in annotations.items():
-            key, value = a
-            file_[key] = value
+    file_ = synapseclient.File(
+            path=path,
+            name=name,
+            parent=parent,
+            **kwargs)
     file_ = syn.store(file_)
     return file_
 
@@ -110,13 +109,14 @@ def entities(syn, sampleFile, project):
     sample_folder_two = folder(syn, project)
     # store sample files
     _file = file_(syn, sample_folder, SAMPLE_FILE, name="file1.csv",
-                  annotations={'preexistingAnnotation': 'yes'})
-    _file2 = file_(syn, sample_folder, SAMPLE_FILE, name="file2.csv")
-    _file3 = file_(syn, sample_folder_two, SAMPLE_FILE, name="file3.csv")
+                  annotations={'preexistingAnnotation': 'yes'},
+                  synapseStore=False)
+    _file2 = file_(syn, sample_folder, SAMPLE_FILE, name="file2.csv",
+                   synapseStore=False)
+    _file3 = file_(syn, sample_folder_two, SAMPLE_FILE, name="file3.csv",
+                   synapseStore=False)
     # store a sample metadata file
-    meta = synapseclient.File(path=SAMPLE_META, name='meta',
-                              parent=project)
-    meta = syn.store(meta)
+    meta = file_(syn, project, SAMPLE_META, name='meta', synapseStore=False)
     # store a sample table (same values as sample file)
     schema = table(syn, project, sampleFile)
     # store a sample file view
