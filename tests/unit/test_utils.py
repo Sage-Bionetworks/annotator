@@ -113,11 +113,14 @@ class TestScopeModification(object):
         folder_two = conftest.folder(syn, project)
         folder_three = conftest.folder(syn, project)
         file_one = conftest.file_(syn, folder_one, conftest.SAMPLE_FILE,
-                                  {'color': 'red'})
+                                  annotations={'color': 'red'},
+                                  synapseStore=False)
         file_two = conftest.file_(syn, folder_two, conftest.SAMPLE_FILE,
-                                  {'pizza': 'pineapple'})
+                                  annotations={'pizza': 'pineapple'},
+                                  synapseStore=False)
         file_three = conftest.file_(syn, folder_three, conftest.SAMPLE_FILE,
-                                    {'cookie': 'monster'})
+                                    annotations={'cookie': 'monster'},
+                                    synapseStore=False)
         return {1: folder_one, 2: folder_two, 3: folder_three}
 
     """

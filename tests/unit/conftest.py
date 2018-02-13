@@ -109,7 +109,6 @@ def entities(syn, sampleFile, project):
     sample_folder_two = folder(syn, project)
     # store sample files
     _file = file_(syn, sample_folder, SAMPLE_FILE, name="file1.csv",
-                  annotations={'preexistingAnnotation': 'yes'},
                   synapseStore=False)
     _file2 = file_(syn, sample_folder, SAMPLE_FILE, name="file2.csv",
                    synapseStore=False)
