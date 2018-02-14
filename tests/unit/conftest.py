@@ -119,7 +119,8 @@ def entities(syn, sampleFile, project):
     # store a sample table (same values as sample file)
     schema = table(syn, project, sampleFile)
     # store a sample file view
-    entity_view_ = entity_view(syn, project, scopes=project)
+    entity_view_ = entity_view(syn, project,
+            scopes=[sample_folder, sample_folder_two])
     entities = {'files': [_file, _file2, _file3],
             'folders': [sample_folder, sample_folder_two],
             'meta': meta,

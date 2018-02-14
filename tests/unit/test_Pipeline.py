@@ -180,8 +180,10 @@ class TestFileFormatColumn(object):
 
 class TestLinks(object):
     @pytest.fixture
-    def pipeline(self, genericPipeline, genericEntityView, sampleMetadata):
-        genericPipeline.view = genericEntityView
+    def pipeline(self, syn, genericPipeline, entities, sampleMetadata):
+        view = syn.tableQuery("select * from {}".format(
+            entities['entity_view'].id)).asDataFrame()
+        genericPipeline.view = view
         genericPipeline._meta = sampleMetadata
         return genericPipeline
 
@@ -200,6 +202,18 @@ class TestLinks(object):
         with pytest.raises(AttributeError):
             pipeline.view = None
             pipeline.addLinks()
+
+    def test_transferLinks(self, pipeline):
+        print(pipeline.view)
+        pipeline.view['id'] = [1,2,3]
+        pipeline.view['spanishWords'] = None
+        pipeline.view['serbianWords'] = None
+        pipeline.keyCol = 'id'
+        pipeline.links = {'spanishWords': 'mexico', 'serbianWords': 'serbia'}
+        pipeline.transferLinks()
+        assert all(pipeline.view['spanishWords'] == ['quien', 'que', 'donde'])
+        assert all(pipeline.view['serbianWords'] == ['ко', 'Шта', 'где'])
+        assert 'id' not in pipeline.view # by default we drop the `on` column
 
 
 class TestKey(object):
