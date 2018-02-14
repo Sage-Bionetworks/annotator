@@ -65,7 +65,7 @@ def updateTable(syn, tableSynId, newTable, releaseVersion):
     table = syn.store(synapseclient.Table(tableSchema, newTable))
 
 
-def meltjson(args, syn):
+def json2table(args, syn):
     """
     Given a synapse table id with the schema
     annotation_schema = ["key", "description", "columnType", "maximumSize", "value", "valueDescription",
@@ -323,7 +323,7 @@ def sync_manifest(args, syn):
     """
     Creates a manifest (filepath by annotations) designed for the input of synapse sync
     function to facilitate file organization and annotations of those files on synapse.
-    
+
     :param args:
     :param syn:
     :return:
@@ -356,14 +356,14 @@ def buildParser():
                                        description='The following commands are available:',
                                        help='For additional help: "annotator <COMMAND> -h"')
 
-    parser_meltjson = subparsers.add_parser('meltjson', help='Creates a flattened synapse table from json files '
+    parser_json2table = subparsers.add_parser('json2table', help='Creates a flattened synapse table from json files '
                                                              'located on Sage-Bionetworks/synapseAnnotations/data.')
-    parser_meltjson.add_argument('--tableId', help='A table synapse id containing the annotations', required=False,
+    parser_json2table.add_argument('--tableId', help='A table synapse id containing the annotations', required=False,
                                  type=str)
-    parser_meltjson.add_argument('--releaseVersion',
+    parser_json2table.add_argument('--releaseVersion',
                                  help='Sage-Bionetworks/synapseAnnotations release version tag name',
                                  required=False, type=str)
-    parser_meltjson.set_defaults(func=meltjson)
+    parser_json2table.set_defaults(func=json2table)
 
     parser_emptyview = subparsers.add_parser('emptyview', help='Given synapse scopes, creates empty project/file view '
                                                                'schema to be annotated')
