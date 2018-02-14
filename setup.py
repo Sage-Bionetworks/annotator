@@ -14,9 +14,9 @@ setup(
     author_email='phil.snyder@sagebase.org',
     license='MIT',
     packages=find_packages(),
-    scripts=['bin/json2synapse.py',
-             'bin/create_empty_fileview.py',
-             'bin/sync_manifest.py'],
+    entry_points={
+        'console_scripts': ['annotator = annotator.__main__:main']
+    },
     install_requires=[
         'pandas',
         'synapseclient'],
