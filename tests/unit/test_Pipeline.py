@@ -204,7 +204,6 @@ class TestLinks(object):
             pipeline.addLinks()
 
     def test_transferLinks(self, pipeline):
-        print(pipeline.view)
         pipeline.view['id'] = [1,2,3]
         pipeline.view['spanishWords'] = None
         pipeline.view['serbianWords'] = None
@@ -274,6 +273,7 @@ class TestPublish(object):
                 genericPipeline.view,
                 published_view,
                 check_like=True)
+
 
 class TestCreateFileView(object):
     @pytest.fixture(scope='class')
