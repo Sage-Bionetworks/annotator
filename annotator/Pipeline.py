@@ -65,11 +65,13 @@ class Pipeline:
         self.links = links if isinstance(links, dict) else None
         self._backup = []
 
-    def backup(self, message):
+    def backup(self, message=None):
         """ Backup the state of `self` and store in `self._backup` """
         self._backup.append((Pipeline(
-            self.syn, self.view, self._meta, self._activeCols,
-            self._metaActiveCols, self.links, self._sortCols), message))
+            syn=self.syn, view=self.view, meta=self._meta,
+            activeCols=self._activeCols, metaActiveCols=self._metaActiveCols,
+            links=self.links, sortCols=self._sortCols, schema=self.schema),
+            message))
         if len(self._backup) > self.BACKUP_LENGTH:
             self._backup = self._backup[1:]
 

@@ -300,3 +300,42 @@ class TestCreateFileView(object):
                     pipeline.view['preexistingAnnotation']])
         assert any([pd.notnull(v) for v in
                     published_view['preexistingAnnotation']])
+
+class TestBackup(object):
+    def pipeline(self, genericPipeline):
+        return genericPipeline
+
+    def test_backup_empty(self, syn):
+        genericPipeline = annotator.Pipeline(syn)
+        genericPipeline.backup()
+        assert len(genericPipeline._backup) == 1
+        assert genericPipeline._backup[0][0].syn == genericPipeline.syn
+
+    def test_backup_full(self, syn, sampleFile, sampleMetadata):
+        genericPipeline = annotator.Pipeline(syn)
+        cols = ['name']
+        links = {'name': 'mexico'}
+        schema = pandas.DataFrame({'a': [1]})
+        genericPipeline.view = sampleFile
+        genericPipeline._meta = sampleMetadata
+        genericPipeline._activeCols = cols
+        genericPipeline._metaActiveCols = cols
+        genericPipeline.links = links
+        genericPipeline.schema = schema
+        genericPipeline.backup()
+        assert len(genericPipeline._backup) == 1
+        pandas.testing.assert_frame_equal(
+                genericPipeline._backup[0][0].view,
+                sampleFile,
+                check_like=True)
+        pandas.testing.assert_frame_equal(
+                genericPipeline._backup[0][0]._meta,
+                sampleMetadata,
+                check_like=True)
+        assert genericPipeline._backup[0][0]._activeCols == cols
+        assert genericPipeline._backup[0][0]._metaActiveCols == cols
+        assert genericPipeline._backup[0][0].links == links
+        pandas.testing.assert_frame_equal(
+                genericPipeline._backup[0][0].schema,
+                schema,
+                check_like=True)
