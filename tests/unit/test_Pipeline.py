@@ -204,7 +204,7 @@ class TestLinks(object):
             pipeline.addLinks()
 
     def test_transferLinks(self, pipeline):
-        pipeline.view['id'] = [1,2,3]
+        pipeline.view['id'] = [1, 2, 3]
         pipeline.view['spanishWords'] = None
         pipeline.view['serbianWords'] = None
         pipeline.keyCol = 'id'
@@ -212,7 +212,7 @@ class TestLinks(object):
         pipeline.transferLinks()
         assert all(pipeline.view['spanishWords'] == ['quien', 'que', 'donde'])
         assert all(pipeline.view['serbianWords'] == ['ко', 'Шта', 'где'])
-        assert 'id' not in pipeline.view # by default we drop the `on` column
+        assert 'id' not in pipeline.view  # by default we drop the `on` column
 
 
 class TestKey(object):
@@ -300,6 +300,7 @@ class TestCreateFileView(object):
                     pipeline.view['preexistingAnnotation']])
         assert any([pd.notnull(v) for v in
                     published_view['preexistingAnnotation']])
+
 
 class TestBackup(object):
     def pipeline(self, genericPipeline):
