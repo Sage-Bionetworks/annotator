@@ -602,7 +602,7 @@ class Pipeline:
     def valueCounts(self):
         """ Print the value counts of all `self._activeCols`. """
         for c in self._activeCols:
-            print(self.view[c].value_counts(dropna=False), end="\n")
+            print(self.view[c].value_counts(dropna=False), end="\n\n")
 
     def _prettyPrintColumns(self, cols, style):
         """ Helper function to print columns in a legible way.
