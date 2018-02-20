@@ -132,7 +132,6 @@ class Pipeline:
                                            for l in self.schema.key]]
         self.view = self.view.drop(labels, axis=axis)
 
-
     def metaHead(self):
         """ Print head of `self._meta` """
         if hasattr(self._meta, 'head'):
@@ -206,7 +205,6 @@ class Pipeline:
         else:
             print("No active columns.")
 
-
     def addView(self, scope):
         """ Add further Folders/Projects to the scope of `self.view`.
 
@@ -228,18 +226,18 @@ class Pipeline:
                 raise RuntimeError("Must first create a file view if the "
                                    "view is not yet set and not all items in "
                                    "the scope are File Views or Schemas.")
-        self._entityViewSchema = utils.addToScope(self.syn,
-                self._entityViewSchema, scope)
+        self._entityViewSchema = utils.addToScope(
+                self.syn, self._entityViewSchema, scope)
         # Assuming row version/id values stay the same for the before-update
         # rows, we can carry over values from the old view.
         oldIndices = self._index
         oldColumns = self.view.columns
-        newView = utils.synread(self.syn, self._entityViewSchema.id, silent=True)
+        newView = utils.synread(
+                self.syn, self._entityViewSchema.id, silent=True)
         for c in oldColumns:
-            newView.loc[oldIndices,c] = self.view[c].values
+            newView.loc[oldIndices, c] = self.view[c].values
         self.view = newView
         self._index = self.view.index
-
 
     def addActiveCols(self, activeCols, path=False, isMeta=False, backup=True):
         """ Add column names to `self._activeCols` or `self._metaActiveCols`.
@@ -303,8 +301,8 @@ class Pipeline:
     def addKeyCol(self):
         """ Add a key column to `self.view`.
 
-        A key column is a column in `self.view` whose values can be matched in a
-        one-to-one manner with the column values of a column in `self._meta`.
+        A key column is a column in `self.view` whose values can be matched in
+        a one-to-one manner with the column values of a column in `self._meta`.
         Usually this involves applying a regular expression to one of the
         columns in `self.view`. After a regular expression which satisfies the
         users requirements is found, the key column is automatically added to
@@ -560,11 +558,12 @@ class Pipeline:
             malformed_values = schemaModule.validateView(self.view, self.schema)
             if malformed_values:
                 for k in malformed_values:
-                    warnings.append("{} contains the following values which are "
-                                    "not specified in the schema: {}".format(
-                                        k, ", ".join(map(str, malformed_values[k]))) +
-                                    "\n\tPossible values are {}".format(
-                                        ", ".join(self.schema.loc[k].value.values)))
+                    warnings.append(
+                            "{} contains the following values which are "
+                            "not specified in the schema: {}".format(
+                                k, ", ".join(map(str, malformed_values[k]))) +
+                            "\n\tPossible values are {}".format(
+                                ", ".join(self.schema.loc[k].value.values)))
         return warnings
 
     def removeActiveCols(self, activeCols):
