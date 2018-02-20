@@ -329,7 +329,7 @@ def inferValues(df, col, referenceCols):
             df.loc[df[referenceCols] == k, col] = v[0]
         else:
             print("Unable to infer value when {} = {}".format(
-                referenceCols, k))
+                  referenceCols, k))
     return df
 
 

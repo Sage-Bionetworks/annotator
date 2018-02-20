@@ -79,29 +79,28 @@ class Pipeline:
             self._activeCols = backup._activeCols
             print("Undo: {}".format(message))
         else:
-            print("At last available change.")
+            raise IndexError("At last available change.")
 
     def head(self):
         """ Print head of `self.view` """
         if hasattr(self.view, 'head'):
             print(self.view.head())
         else:
-            print("No data view set.")
+            raise AttributeError("No data view set.")
 
     def tail(self):
         """ Print tail of `self.view` """
         if hasattr(self.view, 'tail'):
             print(self.view.tail())
         else:
-            print("No data view set")
+            raise AttributeError("No data view set.")
 
     def shape(self):
         """ Print shape of `self.view` """
         if hasattr(self.view, 'shape'):
             print(self.view.shape)
         else:
-            print("No data view set.")
-
+            raise AttributeError("No data view set.")
 
     def drop(self, labels, axis):
         """ Delete rows or columns from a file view on Synapse.*
@@ -133,27 +132,26 @@ class Pipeline:
                                            for l in self.schema.key]]
         self.view = self.view.drop(labels, axis=axis)
 
-
     def metaHead(self):
         """ Print head of `self._meta` """
         if hasattr(self._meta, 'head'):
             print(self._meta.head())
         else:
-            print("No metadata view set.")
+            raise AttributeError("No metadata view set.")
 
     def metaTail(self):
         """ Print tail of `self._meta` """
         if hasattr(self._meta, 'tail'):
             print(self._meta.tail())
         else:
-            print("No metadata view set.")
+            raise AttributeError("No metadata view set.")
 
     def metaShape(self):
         """ Print shape of `self._meta` """
         if hasattr(self._meta, 'shape'):
             print(self._meta.shape)
         else:
-            print("No metadata view set.")
+            raise AttributeError("No metadata view set.")
 
     def columns(self, style="numbers"):
         """ Pretty print `self.view.columns`.
@@ -166,7 +164,7 @@ class Pipeline:
         if hasattr(self.view, 'columns'):
             self._prettyPrintColumns(self.view.columns, style)
         else:
-            print("No data view set.")
+            raise AttributeError("No data view set.")
 
     def metaColumns(self, style="numbers"):
         """ Pretty print `self._meta.columns`.
@@ -179,7 +177,7 @@ class Pipeline:
         if hasattr(self._meta, 'columns'):
             self._prettyPrintColumns(self._meta.columns, style)
         else:
-            print("No metadata view set.")
+            raise AttributeError("No metadata view set.")
 
     def activeColumns(self, style="numbers"):
         """ Pretty print `self._activeCols`.
@@ -207,7 +205,6 @@ class Pipeline:
         else:
             print("No active columns.")
 
-
     def addView(self, scope):
         """ Add further Folders/Projects to the scope of `self.view`.
 
@@ -229,18 +226,18 @@ class Pipeline:
                 raise RuntimeError("Must first create a file view if the "
                                    "view is not yet set and not all items in "
                                    "the scope are File Views or Schemas.")
-        self._entityViewSchema = utils.addToScope(self.syn,
-                self._entityViewSchema, scope)
+        self._entityViewSchema = utils.addToScope(
+                self.syn, self._entityViewSchema, scope)
         # Assuming row version/id values stay the same for the before-update
         # rows, we can carry over values from the old view.
         oldIndices = self._index
         oldColumns = self.view.columns
-        newView = utils.synread(self.syn, self._entityViewSchema.id, silent=True)
+        newView = utils.synread(
+                self.syn, self._entityViewSchema.id, silent=True)
         for c in oldColumns:
-            newView.loc[oldIndices,c] = self.view[c].values
+            newView.loc[oldIndices, c] = self.view[c].values
         self.view = newView
         self._index = self.view.index
-
 
     def addActiveCols(self, activeCols, path=False, isMeta=False, backup=True):
         """ Add column names to `self._activeCols` or `self._metaActiveCols`.
@@ -295,8 +292,7 @@ class Pipeline:
             column values. Defaults to True.
         """
         if self.view is None:
-            print("No data view set.")
-            return
+            raise AttributeError("No data view set.")
         if backup:
             self.backup("addDefaultValues")
         for k in colVals:
@@ -305,8 +301,8 @@ class Pipeline:
     def addKeyCol(self):
         """ Add a key column to `self.view`.
 
-        A key column is a column in `self.view` whose values can be matched in a
-        one-to-one manner with the column values of a column in `self._meta`.
+        A key column is a column in `self.view` whose values can be matched in
+        a one-to-one manner with the column values of a column in `self._meta`.
         Usually this involves applying a regular expression to one of the
         columns in `self.view`. After a regular expression which satisfies the
         users requirements is found, the key column is automatically added to
@@ -314,8 +310,7 @@ class Pipeline:
         in `self._meta`.
         """
         if self.view is None or self._meta is None:
-            print("No data view set.")
-            return
+            raise AttributeError("No data view set.")
         self.backup("addKeyCol")
         link = self._linkCols(1)
         dataKey, metaKey = link.popitem()
@@ -401,8 +396,7 @@ class Pipeline:
         Links stored in `self.links`.
         """
         if self.view is None or self._meta is None:
-            print("No data view set.")
-            return
+            raise AttributeError("No data view set.")
         if backup:
             self.backup("addLinks")
         if links is None:
@@ -564,11 +558,12 @@ class Pipeline:
             malformed_values = schemaModule.validateView(self.view, self.schema)
             if malformed_values:
                 for k in malformed_values:
-                    warnings.append("{} contains the following values which are "
-                                    "not specified in the schema: {}".format(
-                                        k, ", ".join(map(str, malformed_values[k]))) +
-                                    "\n\tPossible values are {}".format(
-                                        ", ".join(self.schema.loc[k].value.values)))
+                    warnings.append(
+                            "{} contains the following values which are "
+                            "not specified in the schema: {}".format(
+                                k, ", ".join(map(str, malformed_values[k]))) +
+                            "\n\tPossible values are {}".format(
+                                ", ".join(self.schema.loc[k].value.values)))
         return warnings
 
     def removeActiveCols(self, activeCols):
@@ -789,8 +784,7 @@ class Pipeline:
             Column(s) to match on.
         """
         if self.view is None:
-            print("No data view set.")
-            return
+            raise AttributeError("No data view set.")
         self.backup("inferValues")
         self.view = utils.inferValues(self.view, col, referenceCols)
 
