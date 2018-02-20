@@ -79,29 +79,28 @@ class Pipeline:
             self._activeCols = backup._activeCols
             print("Undo: {}".format(message))
         else:
-            print("At last available change.")
+            raise IndexError("At last available change.")
 
     def head(self):
         """ Print head of `self.view` """
         if hasattr(self.view, 'head'):
             print(self.view.head())
         else:
-            print("No data view set.")
+            raise AttributeError("No data view set.")
 
     def tail(self):
         """ Print tail of `self.view` """
         if hasattr(self.view, 'tail'):
             print(self.view.tail())
         else:
-            print("No data view set")
+            raise AttributeError("No data view set.")
 
     def shape(self):
         """ Print shape of `self.view` """
         if hasattr(self.view, 'shape'):
             print(self.view.shape)
         else:
-            print("No data view set.")
-
+            raise AttributeError("No data view set.")
 
     def drop(self, labels, axis):
         """ Delete rows or columns from a file view on Synapse.*
@@ -139,21 +138,21 @@ class Pipeline:
         if hasattr(self._meta, 'head'):
             print(self._meta.head())
         else:
-            print("No metadata view set.")
+            raise AttributeError("No metadata view set.")
 
     def metaTail(self):
         """ Print tail of `self._meta` """
         if hasattr(self._meta, 'tail'):
             print(self._meta.tail())
         else:
-            print("No metadata view set.")
+            raise AttributeError("No metadata view set.")
 
     def metaShape(self):
         """ Print shape of `self._meta` """
         if hasattr(self._meta, 'shape'):
             print(self._meta.shape)
         else:
-            print("No metadata view set.")
+            raise AttributeError("No metadata view set.")
 
     def columns(self, style="numbers"):
         """ Pretty print `self.view.columns`.
@@ -166,7 +165,7 @@ class Pipeline:
         if hasattr(self.view, 'columns'):
             self._prettyPrintColumns(self.view.columns, style)
         else:
-            print("No data view set.")
+            raise AttributeError("No data view set.")
 
     def metaColumns(self, style="numbers"):
         """ Pretty print `self._meta.columns`.
@@ -179,7 +178,7 @@ class Pipeline:
         if hasattr(self._meta, 'columns'):
             self._prettyPrintColumns(self._meta.columns, style)
         else:
-            print("No metadata view set.")
+            raise AttributeError("No metadata view set.")
 
     def activeColumns(self, style="numbers"):
         """ Pretty print `self._activeCols`.
@@ -295,8 +294,7 @@ class Pipeline:
             column values. Defaults to True.
         """
         if self.view is None:
-            print("No data view set.")
-            return
+            raise AttributeError("No data view set.")
         if backup:
             self.backup("addDefaultValues")
         for k in colVals:
@@ -314,8 +312,7 @@ class Pipeline:
         in `self._meta`.
         """
         if self.view is None or self._meta is None:
-            print("No data view set.")
-            return
+            raise AttributeError("No data view set.")
         self.backup("addKeyCol")
         link = self._linkCols(1)
         dataKey, metaKey = link.popitem()
@@ -401,8 +398,7 @@ class Pipeline:
         Links stored in `self.links`.
         """
         if self.view is None or self._meta is None:
-            print("No data view set.")
-            return
+            raise AttributeError("No data view set.")
         if backup:
             self.backup("addLinks")
         if links is None:
@@ -789,8 +785,7 @@ class Pipeline:
             Column(s) to match on.
         """
         if self.view is None:
-            print("No data view set.")
-            return
+            raise AttributeError("No data view set.")
         self.backup("inferValues")
         self.view = utils.inferValues(self.view, col, referenceCols)
 
