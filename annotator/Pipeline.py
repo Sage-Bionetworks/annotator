@@ -451,7 +451,7 @@ class Pipeline:
         """
         self.backup("substituteColumnValues")
         self.view.loc[:, col] = utils.substituteColumnValues(
-                self.view[col].values)
+                self.view[col].values, mod)
 
     def _parseView(self, view, sortCols, isMeta=False):
         """ Turn `view` into a pandas DataFrame.
