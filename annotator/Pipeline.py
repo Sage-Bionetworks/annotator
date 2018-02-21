@@ -762,8 +762,11 @@ class Pipeline:
         merged = self.view.merge(relevant_meta, on=on, how=how)
         # if there are duplicates in the data this may break things
         merged.drop_duplicates(inplace=True)
-        print("original", self.view.shape)
-        print("merged", merged.shape)
+        print("Transferred:")
+        for k, v in self.links.items():
+            print("\t", k, "<-", v)
+        print("Dropped:")
+        print("\t", on)
         for c in cols:
             v = self.links[c]
             if v in renamedCols:
