@@ -348,7 +348,7 @@ def substituteColumnValues(referenceList, mod):
     return referenceList
 
 
-def colFromRegex(referenceList, regex):
+def colFromRegex(referenceList, regex, silent=False):
     """ Return a list created by mapping a regular expression to another list.
     The regular expression must contain at least one capture group.
 
@@ -367,9 +367,15 @@ def colFromRegex(referenceList, regex):
     if not p.groups:
         raise RuntimeError("`regex` must have at least one capture group.")
     newCol = []
+    if not all([isinstance(i, str) for i in referenceList]):
+        print("Warning: Attempting to convert values to str.")
+        print("May cause unexpected results.")
     for s in referenceList:
-        m = p.search(s) if isinstance(s, str) else None
-        if not m and isinstance(s, str):
-            print("{} does not match regex.".format(s))
-        newCol.append(m.group(1)) if m else newCol.append(None)
+        m = p.search(str(s))
+        if not m:
+            if not silent:
+                print("{} does not match regex.".format(str(s)))
+            newCol.append(None)
+        else:
+            newCol.append(m.group(1))
     return newCol
