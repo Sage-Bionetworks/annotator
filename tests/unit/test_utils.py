@@ -218,3 +218,12 @@ class TestValueModification(object):
         # gives a list of the first vowel of each word
         result = annotator.utils.colFromRegex(values, r"([aeiou])")
         assert result == ['u', 'u', 'e', 'e', 'o']
+
+    def test_colFromRegex_non_str(self):
+        values = [[1,2,3], {4,5,6}]
+        result = annotator.utils.colFromRegex(values, r"(\d)")
+        assert result == ["1", "4"]
+
+    def test_colFromRegex_no_capture_group(self, values):
+        result = annotator.utils.colFromRegex(values, r"\we\w")
+        assert result == [None, None, 'red', 'ree', None]
