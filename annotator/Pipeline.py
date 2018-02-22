@@ -483,16 +483,25 @@ class Pipeline:
             raise TypeError(
                     "{} is not a supported data input type".format(type(view)))
 
-    def publish(self, validate=True):
+    def publish(self, target=None, validate=True):
         """ Store `self.view` back to the file view it was derived
         from on Synapse.
 
         Parameters
         ----------
+        target : str
+            Synapse ID of Table or File View to store the data view to.
+            If not set, defaults to `self._entityViewSchema.id`.
         validate : bool
             Optional. Whether to warn of possible errors in `self.view`.
             Defaults to True.
         """
+        if self.view is None:
+            raise RuntimeError("A data view is not set.")
+        if self._entityViewSchema is None and target is None:
+            raise RuntimeError(
+                    "Either a Schema or publish target must be set.")
+        target = self._entityViewSchema.id if target is None else target
         if validate:
             warnings = self._validate()
             if len(warnings):
@@ -503,14 +512,14 @@ class Pipeline:
                 if not continueAnyways:
                     print("Publish canceled.")
                     return
-        t = sc.Table(self._entityViewSchema.id, self.view)
+        t = sc.Table(target, self.view)
         print("Storing to Synapse...")
         t_online = self.syn.store(t)
         print("Fetching new table index...")
-        self.view = utils.synread(self.syn, self._entityViewSchema.id)
+        self.view = utils.synread(self.syn, target)
         self._index = self.view.index
         print("You're good to go :~)")
-        return self._entityViewSchema.id
+        return target
 
     def _getUserConfirmation(self, message="Proceed anyways? (y) or (n): "):
         """ Get confirmation from user.
