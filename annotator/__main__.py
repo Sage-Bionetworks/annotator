@@ -133,15 +133,6 @@ def createColumnsFromJson(path, defaultMaximumSize=250):
         if d['columnType'] == 'STRING' and defaultMaximumSize:
             d['maximumSize'] = defaultMaximumSize
 
-        elif d['columnType'] == 'BOOLEAN':
-            d['maximumSize'] = 4
-
-        elif d['columnType'] == 'DOUBLE':
-            d['maximumSize'] = 20
-
-        else:
-            d['maximumSize'] = 50
-
         cols.append(synapseclient.Column(**d))
 
     return cols
@@ -174,13 +165,10 @@ def emptyView(args, syn):
     [cols.extend(createColumnsFromJson(j)) for j in json_files]
 
     # create schema and print the saved schema
-    if len(cols) < 60:
-        view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
-                                                         addDefaultViewColumns=default_columns, addAnnotationColumns=True,
-                                                         view_type=viewType))
-        print(view)
-    else:
-        print('Please provide less than 60 columns')
+    view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
+                                                     addDefaultViewColumns=default_columns, addAnnotationColumns=True,
+                                                     view_type=viewType))
+    print(view)
 
 
 def _getLists(local_root, depth):
