@@ -174,10 +174,13 @@ def emptyView(args, syn):
     [cols.extend(createColumnsFromJson(j)) for j in json_files]
 
     # create schema and print the saved schema
-    view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
-                                                     addDefaultViewColumns=default_columns, addAnnotationColumns=True,
-                                                     view_type=viewType))
-    print(view)
+    if len(cols) < 60:
+        view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
+                                                         addDefaultViewColumns=default_columns, addAnnotationColumns=True,
+                                                         view_type=viewType))
+        print(view)
+    else:
+        print('Please provide less than 60 columns')
 
 
 def _getLists(local_root, depth):
