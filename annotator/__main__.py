@@ -134,7 +134,7 @@ def createColumnsFromJson(path, defaultMaximumSize=250):
             d['maximumSize'] = defaultMaximumSize
 
         elif d['columnType'] == 'BOOLEAN':
-            d['maximumSize'] = 4
+            d['maximumSize'] = 5
 
         elif d['columnType'] == 'DOUBLE':
             d['maximumSize'] = 20
