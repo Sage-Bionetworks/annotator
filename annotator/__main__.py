@@ -173,8 +173,15 @@ def emptyView(args, syn):
     cols = []
     [cols.extend(createColumnsFromJson(j)) for j in json_files]
 
-    # create schema and print the saved schema
-    if len(cols) < 60:
+    # get default columns, check allowed column length, if max <= 60, create schema and print the saved schema
+    minimal_view_schema_columns = [x['id'] for x in syn.restGET("/column/tableview/defaults/file")['list']]
+
+    if default_columns:
+        condition = len(cols) + len(minimal_view_schema_columns)
+    else:
+        condition = len(cols)
+
+    if condition <= 60:
         view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
                                                          addDefaultViewColumns=default_columns, addAnnotationColumns=True,
                                                          view_type=viewType))
