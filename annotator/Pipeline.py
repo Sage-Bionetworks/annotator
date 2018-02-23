@@ -59,14 +59,14 @@ class Pipeline:
             self.addActiveCols(metaActiveCols, isMeta=True, backup=False)
         self._sortCols = sortCols
         self.keyCol = None
-        self.links = links if isinstance(links, dict) else None
+        self._links = links if isinstance(links, dict) else None
         self._backup = []
 
     def backup(self, message):
         """ Backup the state of `self` and store in `self._backup` """
         self._backup.append((Pipeline(
             self.syn, self.view, self._meta, self._activeCols,
-            self._metaActiveCols, self.links, self._sortCols), message))
+            self._metaActiveCols, self._links, self._sortCols), message))
         if len(self._backup) > self.BACKUP_LENGTH:
             self._backup = self._backup[1:]
 
@@ -204,6 +204,14 @@ class Pipeline:
             self._prettyPrintColumns(self._metaActiveColumns, style)
         else:
             print("No active columns.")
+
+    def links(self):
+        """ Pretty print `self._links`. """
+        if self._links:
+            for k, v in self._links.items():
+                print(k, "<->", v)
+        else:
+            print("No links.")
 
     def addView(self, scope):
         """ Add further Folders/Projects to the scope of `self.view`.
@@ -383,17 +391,17 @@ class Pipeline:
         self.view[newColName] = filetypeCol
 
     def addLinks(self, links=None, append=True, backup=True):
-        """ Add link values to `self.links`
+        """ Add link values to `self._links`
 
         Parameters
         ----------
         links : dict, optional
             Mappings from data columns to metadata columns to add
-            to `self.links`. Calls `self._linkCols` if not set.
+            to `self._links`. Calls `self._linkCols` if not set.
 
         Returns
         -------
-        Links stored in `self.links`.
+        Links stored in `self._links`.
         """
         if self.view is None or self._meta is None:
             raise AttributeError("No data view set.")
@@ -403,17 +411,17 @@ class Pipeline:
             links = self._linkCols(-1)
         if not isinstance(links, dict):
             raise TypeError("`links` must be a dictionary-like object")
-        if not self.links or not append:
-            self.links = links
+        if not self._links or not append:
+            self._links = links
         else:
             for k in links:
-                self.links[k] = links[k]
+                self._links[k] = links[k]
         for k, v in links.items():
             if k not in self._activeCols:
                 self._activeCols.append(k)
             if v not in self._metaActiveCols:
                 self._metaActiveCols.append(v)
-        return self.links
+        return self._links
 
     def isValidKeyPair(self, dataCol=None, metaCol=None):
         """ Check if two columns are compatible to join upon.
@@ -741,14 +749,14 @@ class Pipeline:
         """
         if on is None:
             on = self.keyCol
-        if not self.links:
+        if not self._links:
             raise RuntimeError("Need to link metadata values first.")
         self.backup("transferLinks")
         if not cols:
-            cols = list(self.links.keys())
+            cols = list(self._links.keys())
             if on in cols:
                 cols.pop(cols.index(on))
-        metaCols = list(set(self.links.values()))
+        metaCols = list(set(self._links.values()))
         renamedCols = {}
         for c in metaCols:
             if c in self.view.columns:
@@ -763,12 +771,12 @@ class Pipeline:
         # if there are duplicates in the data this may break things
         merged.drop_duplicates(inplace=True)
         print("Transferred:")
-        for k, v in self.links.items():
+        for k, v in self._links.items():
             print("\t", k, "<-", v)
         print("Dropped:")
         print("\t", on)
         for c in cols:
-            v = self.links[c]
+            v = self._links[c]
             if v in renamedCols:
                 v = renamedCols[c]
             self.view[c] = merged[v].values
