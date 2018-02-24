@@ -166,8 +166,7 @@ def emptyView(args, syn):
     else:
         viewType = 'file'
 
-    if ',' in scopes:
-        scopes = scopes.split(',')
+    scopes = [x[3:] for x in scopes]
 
     # create synapse columns from annotations json file
     cols = []
@@ -182,6 +181,7 @@ def emptyView(args, syn):
         condition = len(cols)
 
     if condition <= 60:
+
         view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
                                                          addDefaultViewColumns=default_columns, addAnnotationColumns=True,
                                                          view_type=viewType))
