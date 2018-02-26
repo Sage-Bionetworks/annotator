@@ -260,6 +260,9 @@ class Pipeline:
         meta : bool
             Optional. Whether we are adding active columns to the data or
             the metadata. Defaults to False.
+        backup : bool
+            Optional. Whether to save the state of `self` before updating
+            column values. Defaults to True.
         """
         if backup:
             self.backup("addActiveCols")
@@ -398,6 +401,12 @@ class Pipeline:
         links : dict, optional
             Mappings from data columns to metadata columns to add
             to `self._links`. Calls `self._linkCols` if not set.
+        append : bool
+            Optional. Whether to append the links or to overwrite existing
+            links. Defaults to True.
+        backup : bool
+            Optional. Whether to save the state of `self` before updating
+            column values. Defaults to True.
 
         Returns
         -------
@@ -422,6 +431,36 @@ class Pipeline:
             if v not in self._metaActiveCols:
                 self._metaActiveCols.append(v)
         return self._links
+
+    def removeLinks(self, links, backup=True):
+        """ Remove links from `self._links`.
+
+        Parameters
+        ----------
+        links : str, list
+            A name or list of names of columns in the data view
+            which have links.
+        backup : bool
+            Optional. Whether to save the state of `self` before updating
+            column values. Defaults to True.
+
+        Returns
+        -------
+        dict of links removed
+        """
+        if self._links is None:
+            raise AttributeError("No links set.")
+        if backup:
+            self.backup("removeLinks")
+        if isinstance(links, str):
+            links = [links]
+        for l in links:
+            if l not in self._links:
+                raise KeyError("{} is not in links".format(l))
+        removedLinks = {}
+        for l in links:
+            removedLinks[l] = self._links.pop(l)
+        return removedLinks
 
     def isValidKeyPair(self, dataCol=None, metaCol=None):
         """ Check if two columns are compatible to join upon.
