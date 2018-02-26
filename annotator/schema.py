@@ -63,11 +63,12 @@ def flattenJson(path, module=None):
     """
     json_record = pandas.read_json(path)
 
-    if json_record.enumValues.isnull().values.any():
-        json_record.loc[json_record.enumValues.isnull(), 'enumValues'] = []
+    for row in json_record.loc[json_record.columnType.isin(['BOOLEAN']), 'enumValues'].index:
+        json_record.at[row, 'enumValues'] = [{"value": True, "description": "", "source": ""},
+                                             {"value": False, "description": "", "source": ""}]
 
-    if json_record.maximumSize.isnull().values.any():
-        json_record.loc[json_record.maximumSize.isnull(), 'maximumSize'] = 250
+    for row in json_record.loc[json_record.columnType.isin(['BOOLEAN']), 'maximumSize'].index:
+        json_record.at[row, 'maximumSize'] = 5
 
     # grab annotations with empty enumValue lists
     # i.e. don't require normalization and structure their schema
