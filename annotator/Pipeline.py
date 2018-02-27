@@ -102,7 +102,7 @@ class Pipeline:
         else:
             raise AttributeError("No data view set.")
 
-    def drop(self, labels, axis):
+    def drop(self, labels, axis, backup=True):
         """ Delete rows or columns from a file view on Synapse.*
             Rows are only dropped locally. Deleting rows from a
             file view on Synapse would require deleting the file itself.
@@ -113,7 +113,7 @@ class Pipeline:
         labels : str, list
             Can either be a str indicating the index (usually formatted
             ROWID_VERSION) or a list of str.
-            axis : int
+        axis : int
             For a two-dimensional dataframe, 0 indicates rows whereas
             1 indicates columns.
 
@@ -122,6 +122,8 @@ class Pipeline:
         A list of indices deleted.
         """
         labels = [labels] if isinstance(labels, str) else labels
+        if backup and isinstance(labels, list) and isinstance(axis, int):
+            self.backup("drop, axis = {}".format(axis))
         if axis == 0:
             self._index = self._index.drop(labels)
         elif axis == 1:
@@ -213,7 +215,7 @@ class Pipeline:
         else:
             print("No links.")
 
-    def addView(self, scope):
+    def addView(self, scope, backup=True):
         """ Add further Folders/Projects to the scope of `self.view`.
 
         Parameters
@@ -234,6 +236,8 @@ class Pipeline:
                 raise RuntimeError("Must first create a file view if the "
                                    "view is not yet set and not all items in "
                                    "the scope are File Views or Schemas.")
+        if backup and isinstance(scope, (str, list)):
+            self.backup("addView, scope = {}".format(scope))
         self._entityViewSchema = utils.addToScope(
                 self.syn, self._entityViewSchema, scope)
         # Assuming row version/id values stay the same for the before-update
@@ -261,8 +265,11 @@ class Pipeline:
             Optional. Whether we are adding active columns to the data or
             the metadata. Defaults to False.
         """
-        if backup:
-            self.backup("addActiveCols")
+        if (backup and
+            isinstance(activeCols, (str, list, dict, pd.DataFrame)) and
+            isinstance(path, bool) and
+            isinstance(isMeta, bool)):
+            self.backup("addActiveCols, {}".format(activeCols))
         # activeCols can be a str, list, dict, or DataFrame
         if isinstance(activeCols, str) and not path:
             if isMeta and activeCols not in self._metaActiveCols:
@@ -301,12 +308,12 @@ class Pipeline:
         """
         if self.view is None:
             raise AttributeError("No data view set.")
-        if backup:
-            self.backup("addDefaultValues")
+        if backup and isinstance(colVals, dict):
+            self.backup("addDefaultValues, {}".format(colVals))
         for k in colVals:
             self.view[k] = colVals[k]
 
-    def addKeyCol(self):
+    def addKeyCol(self, backup=True):
         """ Add a key column to `self.view`.
 
         A key column is a column in `self.view` whose values can be matched in
@@ -319,7 +326,8 @@ class Pipeline:
         """
         if self.view is None or self._meta is None:
             raise AttributeError("No data view set.")
-        self.backup("addKeyCol")
+        if backup:
+            self.backup("addKeyCol")
         link = self._linkCols(1)
         dataKey, metaKey = link.popitem()
         regex = ''
@@ -374,7 +382,8 @@ class Pipeline:
         finally:
             readline.set_startup_hook()
 
-    def addFileFormatCol(self, referenceCol='name', newColName='fileFormat'):
+    def addFileFormatCol(self, referenceCol='name',
+                         newColName='fileFormat', backup=True):
         """ Add a file format column using a preprogrammed regular expression.
 
         Parameters
@@ -384,7 +393,10 @@ class Pipeline:
         fileFormatColName : str
             Optional. Name of newly created column. Defaults to 'fileFormat'.
         """
-        self.backup("addFileFormatCol")
+        if (backup and
+            isinstance(referenceCol, str) and
+            isinstance(fileFormatColName, str)):
+            self.backup("addFileFormatCol, {}".format(newColName))
         regex = r"\.(\w+)(?:\.gz)?$"
         filetypeCol = utils.colFromRegex(
                 self.view[referenceCol].values, regex)
@@ -405,12 +417,12 @@ class Pipeline:
         """
         if self.view is None or self._meta is None:
             raise AttributeError("No data view set.")
-        if backup:
-            self.backup("addLinks")
         if links is None:
             links = self._linkCols(-1)
         if not isinstance(links, dict):
             raise TypeError("`links` must be a dictionary-like object")
+        if backup and isinstance(append, bool):
+            self.backup("addLinks, {}".format(links))
         if not self._links or not append:
             self._links = links
         else:
@@ -447,7 +459,7 @@ class Pipeline:
             return False
         return True
 
-    def substituteColumnValues(self, col, mod):
+    def substituteColumnValues(self, col, mod, backup=True):
         """ Substitute values in a column according to a mapping.
 
         Parameters
@@ -457,7 +469,8 @@ class Pipeline:
         mod : dict
             Mappings from the old to new values.
         """
-        self.backup("substituteColumnValues")
+        if backup and isinstance(col, str) and isinstance(mod, dict):
+            self.backup("substituteColumnValues, {}: {}".format(col, mod))
         self.view.loc[:, col] = utils.substituteColumnValues(
                 self.view[col].values, mod)
 
@@ -574,7 +587,7 @@ class Pipeline:
                                 ", ".join(self.schema.loc[k].value.values)))
         return warnings
 
-    def removeActiveCols(self, activeCols):
+    def removeActiveCols(self, activeCols, backup=True):
         """ Remove a column name from `self._activeCols`
 
         Parameters
@@ -582,7 +595,8 @@ class Pipeline:
         activeCols : str or list-like
             Column name(s) to remove.
         """
-        self.backup("removeActiveCols")
+        if backup and isinstance(activeCols, (str, list)):
+            self.backup("removeActiveCols, {}".format(activeCols))
         if isinstance(activeCols, str):
             self._activeCols.remove(activeCols)
         else:  # is list-like
@@ -640,7 +654,8 @@ class Pipeline:
                 padding = " " if (len(cols) > 10 and i < 10) else ""
                 print(str(i), "{}|".format(padding), cols[i])
 
-    def createFileView(self, name, parent, scope, addCols=None, schema=None):
+    def createFileView(self, name, parent, scope,
+                       addCols=None, schema=None, backup=True):
         """ Create and store a file view for further manipulation.
 
         Parameters
@@ -679,7 +694,13 @@ class Pipeline:
         -------
         Synapse ID of newly created fileview.
         """
-        self.backup("createFileView")
+        if (backup and
+            isinstance(name, str) and
+            isinstance(parent, str) and
+            isinstance(scope, (str, list)) and
+            (isinstance(addCols, (dict, list, str)) or addCols is None) and
+            (isinstance(schema, (str, pd.DataFrame)) or schema is None)):
+            self.backup("createFileView, {}".format(name))
 
         # Fetch default keys, plus any preexisting annotation keys
         cols = utils.getDefaultColumnsForScope(self.syn, scope)
@@ -724,7 +745,8 @@ class Pipeline:
             self.addDefaultValues(addCols, False)
         return self._entityViewSchema.id
 
-    def transferLinks(self, cols=None, on=None, how='left', dropOn=True):
+    def transferLinks(self, cols=None, on=None,
+                      how='left', dropOn=True, backup=True):
         """ Copy metadata to `self.view`, matching on `self.keyCol`.
 
         Parameters
@@ -747,11 +769,20 @@ class Pipeline:
         columns to the metadata columns (`self.addLinks`), transfer the
         values from the metadata to the data, aligning on `on`.
         """
-        if on is None:
-            on = self.keyCol
         if not self._links:
             raise RuntimeError("Need to link metadata values first.")
-        self.backup("transferLinks")
+        if on is None:
+            if isinstance(self.keyCol, str):
+                on = self.keyCol
+            else:
+                raise TypeError("Must pass a column to join the metadata view "
+                                "upon the data view if keyCol is not set.")
+        if (backup and
+            (isinstance(cols, list) or cols is None) and
+            isinstance(on, str) and
+            isinstance(how, str) and
+            isinstance(dropOn, bool)):
+            self.backup("transferLinks, {}".format(self._links))
         if not cols:
             cols = list(self._links.keys())
             if on in cols:
@@ -783,7 +814,7 @@ class Pipeline:
         if dropOn:
             self.view.drop(on, 1, inplace=True)
 
-    def inferValues(self, col, referenceCols):
+    def inferValues(self, col, referenceCols, backup=True):
         """ Fill in values for indices which match on `referenceCols`
         and which have a single, unique, non-NaN value in `col`.
 
@@ -796,7 +827,14 @@ class Pipeline:
         """
         if self.view is None:
             raise AttributeError("No data view set.")
-        self.backup("inferValues")
+        for c in [col] + referenceCols:
+            if c not in self.view.columns:
+                raise KeyError("{} is not a column "
+                               "in the data view.".format(c))
+        if (backup and
+            isinstance(col, str) and
+            isinstance(referenceCols, (str, list))):
+            self.backup("inferValues, {}".format(col))
         self.view = utils.inferValues(self.view, col, referenceCols)
 
     def _linkCols(self, iters):
