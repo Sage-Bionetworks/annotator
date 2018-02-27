@@ -201,15 +201,17 @@ class Pipeline:
             Optional. One of 'numbers' or 'letters'. Defaults to 'numbers'.
         """
         if self._metaActiveCols:
-            self._prettyPrintColumns(self._metaActiveColumns, style)
+            self._prettyPrintColumns(self._metaActiveCols, style)
         else:
             print("No active columns.")
 
     def links(self):
         """ Pretty print `self._links`. """
         if self._links:
+            longest_key_len = max(map(len, self._links.keys()))
             for k, v in self._links.items():
-                print(k, "<->", v)
+                padding = " " * (longest_key_len - len(k))
+                print(k, padding, "<->", v)
         else:
             print("No links.")
 
@@ -401,21 +403,42 @@ class Pipeline:
 
         Returns
         -------
-        Links stored in `self._links`.
+        dict of links stored in `self._links`.
         """
         if self.view is None or self._meta is None:
-            raise AttributeError("No data view set.")
-        if backup:
-            self.backup("addLinks")
+            raise AttributeError("Both a data and metadata view must be set.")
         if links is None:
             links = self._linkCols(-1)
-        if not isinstance(links, dict):
+        elif not isinstance(links, dict):
             raise TypeError("`links` must be a dictionary-like object")
-        if not self._links or not append:
-            self._links = links
         else:
+            for k, v in links.items():
+                # When manually passing in the links argument,
+                # check to make sure those columns exist in our views
+                if k not in self.view.columns:
+                    raise KeyError("{} is not a column "
+                                   "in the data view.".format(k))
+                if v not in self._meta.columns:
+                    raise KeyError("{} is not a column "
+                                   "in the metadata view.".format(v))
+        if backup:
+            self.backup("addLinks")
+        oldLinks = self._links
+        if isinstance(self._links, dict) and append:
             for k in links:
                 self._links[k] = links[k]
+        else:
+            self._links = links
+            # remove old, overwritten links from active columns
+            if oldLinks is not None:
+                for k, v in oldLinks.items():
+                    self._activeCols.pop(self._activeCols.index(k))
+                    # We need the conditional statement for the edge case
+                    # where a metadata column appears more than once in the
+                    # values of the old links.
+                    if v in self._metaActiveCols:
+                        self._metaActiveCols.pop(self._metaActiveCols.index(v))
+        # add newly added links to active columns
         for k, v in links.items():
             if k not in self._activeCols:
                 self._activeCols.append(k)
