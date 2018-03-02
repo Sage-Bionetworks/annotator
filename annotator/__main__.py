@@ -133,6 +133,15 @@ def createColumnsFromJson(path, defaultMaximumSize=250):
         if d['columnType'] == 'STRING' and defaultMaximumSize:
             d['maximumSize'] = defaultMaximumSize
 
+        elif d['columnType'] == 'BOOLEAN':
+            d['maximumSize'] = 5
+
+        elif d['columnType'] == 'DOUBLE':
+            d['maximumSize'] = 20
+
+        else:
+            d['maximumSize'] = 50
+
         cols.append(synapseclient.Column(**d))
 
     return cols
@@ -157,18 +166,28 @@ def emptyView(args, syn):
     else:
         viewType = 'file'
 
-    if ',' in scopes:
-        scopes = scopes.split(',')
+    scopes = [x[3:] for x in scopes]
 
     # create synapse columns from annotations json file
     cols = []
     [cols.extend(createColumnsFromJson(j)) for j in json_files]
 
-    # create schema and print the saved schema
-    view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
-                                                     addDefaultViewColumns=default_columns, addAnnotationColumns=True,
-                                                     view_type=viewType))
-    print(view)
+    # get default columns, check allowed column length, if max <= 60, create schema and print the saved schema
+    minimal_view_schema_columns = [x['id'] for x in syn.restGET("/column/tableview/defaults/file")['list']]
+
+    if default_columns:
+        condition = len(cols) + len(minimal_view_schema_columns)
+    else:
+        condition = len(cols)
+
+    if condition <= 60:
+
+        view = syn.store(synapseclient.EntityViewSchema(name=view_name, parent=project_id, scopes=scopes, columns=cols,
+                                                         addDefaultViewColumns=default_columns, addAnnotationColumns=True,
+                                                         view_type=viewType))
+        print(view)
+    else:
+        print('Please provide less than 60 columns')
 
 
 def _getLists(local_root, depth):

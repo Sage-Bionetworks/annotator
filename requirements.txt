@@ -1,0 +1,5 @@
+synapseclient>=1.7.3
+pandas
+nose
+pytest
+requests
