@@ -1,8 +1,17 @@
 from setuptools import setup, find_packages
+import sys
+
 import requests
 
 reqRelease = requests.get("https://api.github.com/repos/Sage-Bionetworks/annotator/releases")
-releaseVersion = reqRelease.json()[0]['tag_name']
+reqReleaseJson = reqRelease.json()
+
+try:
+    releaseVersion = reqRelease.json()[0]['tag_name']
+except KeyError as e:
+    print "%s\n" % (reqReleaseJson, )
+    raise e
+
 __version__=str(releaseVersion[1:len(releaseVersion)])
 
 setup(
