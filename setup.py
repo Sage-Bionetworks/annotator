@@ -1,13 +1,9 @@
 from setuptools import setup, find_packages
 import requests
 
-reqRelease = requests.get("https://api.github.com/repos/Sage-Bionetworks/annotator/releases")
-releaseVersion = reqRelease.json()[0]['tag_name']
-__version__=str(releaseVersion[1:len(releaseVersion)])
-
 setup(
     name='annotator',
-    version=__version__,
+    version='2.1.1-dev',
     description='A Synapse annotations automation tool.',
     url='https://github.com/Sage-Bionetworks/annotator',
     author='Phil Snyder, Nasim Sanati',
